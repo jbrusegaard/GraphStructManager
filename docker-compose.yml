@@ -1,0 +1,23 @@
+services:
+  gremlin-server:
+    build:
+      context: .
+      dockerfile: gremlin-config/Dockerfile
+    container_name: gremlin-tinkerpop-server
+    ports:
+      - "8182:8182"  # HTTP port
+    volumes:
+      - ./data:/opt/gremlin-server/data
+    environment:
+      - GREMLIN_SERVER_OPTS=-Xms2g -Xmx4g
+      - JAVA_OPTS=-Djava.security.egd=file:/dev/./urandom
+    networks:
+      - gremlin-network
+
+networks:
+  gremlin-network:
+    driver: bridge
+
+volumes:
+  gremlin-data:
+    driver: local
