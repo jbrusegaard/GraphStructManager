@@ -8,4 +8,3 @@ WORKDIR /opt/gremlin-server
 COPY gremlin-config/ /opt/gremlin-server/conf/
 # Expose Gremlin server port
 EXPOSE 8182
-
