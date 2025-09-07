@@ -1,18 +1,11 @@
-# This code is licensed under the terms of the MIT license https://opensource.org/license/mit
-# Copyright (c) 2021 Marat Reymers
-
-## Golden config for golangci-lint v2
-#
-# This is the best config for golangci-lint based on my experience and opinion.
-# It is very strict, but not extremely strict.
-# Feel free to adapt and change it for your needs.
-
 version: 2
 
 run:
   # Timeout for analysis, e.g. 30s, 5m.
   # Default: 1m
-  timeout: 3m
+  timeout: 5m
+  allow-parallel-runners: true
+  modules-download-mode: readonly
 
 # This file contains only configs which differ from defaults.
 # All possible options can be found here https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
@@ -338,6 +331,7 @@ issues:
   # Set to 0 to disable.
   # Default: 3
   max-same-issues: 50
+  fix: true
 
   exclude-rules:
     - source: "(noinspection|TODO)"
@@ -353,3 +347,25 @@ issues:
         - gosec
         - noctx
         - wrapcheck
+        -
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+    - swaggo
+  settings:
+    gofmt:
+      # Simplify code: gofmt with `-s` option.
+      # Default: true
+      simplify: false
+      # Apply the rewrite rules to the source before reformatting.
+      # https://pkg.go.dev/cmd/gofmt
+      # Default: []
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+        - pattern: 'a[b:len(a)]'
+          replacement: 'a[b:]'

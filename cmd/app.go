@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
-	"testing"
 
 	"app/driver"
+	"app/log"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-func TestGremlin(t *testing.T) {
+func main() {
+	logger := log.InitializeLogger()
 	conn, err := gremlingo.NewDriverRemoteConnection("ws://localhost:8182/gremlin")
 	if err != nil {
-		t.Fatalf("Failed to create driver remote connection: %v", err)
+		logger.Fatalf("Failed to create driver remote connection: %v", err)
 	}
 	defer conn.Close()
 	g := driver.G(conn)
