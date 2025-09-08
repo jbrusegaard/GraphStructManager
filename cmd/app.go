@@ -1,20 +1,37 @@
 package main
 
 import (
-	"fmt"
-
 	"app/driver"
 	"app/log"
-	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"app/types"
 )
+
+type TestVertex struct {
+	types.Vertex
+	Test        string   `gremlin:"test"`
+	Test2       string   `gremlin:"test2"`
+	OtherField  int      `gremlin:"otherField"`
+	OtherField2 string   `gremlin:"otherField2"`
+	OtherFields []string `gremlin:"otherFields"`
+}
 
 func main() {
 	logger := log.InitializeLogger()
-	conn, err := gremlingo.NewDriverRemoteConnection("ws://localhost:8182/gremlin")
+	logger.Info("Logger initialized")
+	db, err := driver.Open("ws://localhost:8182")
 	if err != nil {
-		logger.Fatalf("Failed to create driver remote connection: %v", err)
+		logger.Fatal(err)
 	}
-	defer conn.Close()
-	g := driver.G(conn)
-	fmt.Println(g.V().ToList())
+	defer db.Close()
+
+	err = db.Create(&TestVertex{
+		Test:        "test",
+		Test2:       "test2",
+		OtherField:  1,
+		OtherField2: "otherField2",
+		OtherFields: []string{"otherField1", "otherField2"},
+	})
+	if err != nil {
+		logger.Fatal(err)
+	}
 }
