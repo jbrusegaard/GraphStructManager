@@ -22,7 +22,7 @@ func (driver *GremlinDriver) Create(value any) error {
 	structName, mapValue := structToMap(value)
 	mapValue["lastModified"] = now
 
-	query := driver.g.V().AddV(structName)
+	query := driver.g.AddV(structName)
 	for key, value := range mapValue {
 		rv := reflect.ValueOf(value)
 		switch rv.Kind() {
@@ -32,11 +32,12 @@ func (driver *GremlinDriver) Create(value any) error {
 			query.Property(gremlingo.Cardinality.Single, key, value)
 		}
 	}
-	promise := query.Iterate()
-	err = <-promise
+	id, err := query.Id().Next()
 	if err != nil {
 		return err
 	}
+	reflect.ValueOf(value).Elem().FieldByName("Id").Set(reflect.ValueOf(id.GetInterface()))
+	reflect.ValueOf(value).Elem().FieldByName("LastModified").SetInt(now)
 	return nil
 }
 

@@ -24,14 +24,23 @@ func main() {
 	}
 	defer db.Close()
 
-	err = db.Create(&TestVertex{
+	test1 := TestVertex{
 		Test:        "test",
 		Test2:       "test2",
 		OtherField:  1,
 		OtherField2: "otherField2",
 		OtherFields: []string{"otherField1", "otherField2"},
-	})
+	}
+	err = db.Create(&test1)
 	if err != nil {
 		logger.Fatal(err)
 	}
+
+	var test2 TestVertex
+
+	err = db.First(&test2, test1.Id)
+	if err != nil {
+		return
+	}
+	logger.Info(test1)
 }
