@@ -1,8 +1,8 @@
 package driver
 
 import (
-	"encoding/json"
 	"errors"
+	"reflect"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
@@ -36,13 +36,39 @@ func unloadResultIntoStruct(v any, result *gremlingo.Result) error {
 	for key, value := range mapResult {
 		stringMap[key.(string)] = value
 	}
-	resultJson, err := json.Marshal(stringMap)
-	if err != nil {
-		return err
+
+	rv := reflect.ValueOf(v)
+
+	if rv.Kind() != reflect.Ptr {
+		return errors.New("v must be a pointer")
 	}
-	err = json.Unmarshal(resultJson, v)
-	if err != nil {
-		return err
+	rv = rv.Elem()
+
+	rt := rv.Type()
+
+	for i := range rv.NumField() {
+		field := rv.Field(i)
+
+		gremlinTag := rt.Field(i).Tag.Get("gremlin")
+		if gremlinTag == "" || gremlinTag == "-" || !field.CanInterface() || !field.CanSet() {
+			continue
+		}
+		if _, ok := stringMap[gremlinTag]; !ok {
+			continue
+		}
+		gType := reflect.TypeOf(stringMap[gremlinTag])
+
+		if gType.ConvertibleTo(field.Type()) {
+			field.Set(reflect.ValueOf(stringMap[gremlinTag]).Convert(field.Type()))
+		} else if gType.Kind() == reflect.Slice {
+			slice := reflect.MakeSlice(
+				field.Type(), len(stringMap[gremlinTag].([]any)), len(stringMap[gremlinTag].([]any)),
+			)
+			for i, v := range stringMap[gremlinTag].([]any) {
+				slice.Index(i).Set(reflect.ValueOf(v).Convert(field.Type().Elem()))
+			}
+			field.Set(slice)
+		}
 	}
 	return nil
 }
