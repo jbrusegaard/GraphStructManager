@@ -1,7 +1,7 @@
 package driver
 
 import (
-	"errors"
+	"encoding/json"
 	"reflect"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
@@ -35,34 +35,13 @@ func unloadResultIntoStruct(v any, result *gremlingo.Result) error {
 	for key, value := range mapResult {
 		stringMap[key.(string)] = value
 	}
-
-	rv := reflect.ValueOf(v)
-
-	if rv.Kind() != reflect.Ptr {
-		return errors.New("v must be a pointer")
+	resultJson, err := json.Marshal(stringMap)
+	if err != nil {
+		return err
 	}
-	rv = rv.Elem()
-
-	rt := rv.Type()
-
-	for i := range rv.NumField() {
-		field := rv.Field(i)
-
-		gremlinTag := rt.Field(i).Tag.Get("gremlin")
-		if gremlinTag == "" || gremlinTag == "-" || !field.CanInterface() || !field.CanSet() {
-			continue
-		}
-		if _, ok := stringMap[gremlinTag]; !ok {
-			continue
-		}
-		gType := reflect.TypeOf(stringMap[gremlinTag])
-
-		// check if field is of type gType
-		if field.Type() != gType {
-			continue
-		}
-
-		field.Set(reflect.ValueOf(stringMap[gremlinTag]))
+	err = json.Unmarshal(resultJson, v)
+	if err != nil {
+		return err
 	}
 	return nil
 }

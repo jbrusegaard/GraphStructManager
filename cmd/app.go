@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"app/driver"
 	"app/log"
 	"app/types"
@@ -8,11 +10,11 @@ import (
 
 type TestVertex struct {
 	types.Vertex
-	Test        string   `gremlin:"test"`
-	Test2       string   `gremlin:"test2"`
-	OtherField  int      `gremlin:"otherField"`
-	OtherField2 string   `gremlin:"otherField2"`
-	OtherFields []string `gremlin:"otherFields"`
+	Test        string   `json:"test"        gremlin:"test"`
+	Test2       string   `json:"test2"       gremlin:"test2"`
+	OtherField  int      `json:"otherField"  gremlin:"otherField"`
+	OtherField2 string   `json:"otherField2" gremlin:"otherField2"`
+	OtherFields []string `json:"otherFields" gremlin:"otherFields"`
 }
 
 func main() {
@@ -37,10 +39,14 @@ func main() {
 	}
 
 	var test2 TestVertex
-
+	// benchmark speed of first
+	start := time.Now()
 	err = db.First(&test2, test1.Id)
 	if err != nil {
 		return
 	}
+	elapsed := time.Since(start)
+	logger.Infof("First time: %s", elapsed)
 	logger.Info(test1)
+	logger.Info(test2)
 }
