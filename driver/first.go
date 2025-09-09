@@ -2,7 +2,7 @@ package driver
 
 import (
 	"encoding/json"
-	"reflect"
+	"errors"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
@@ -12,8 +12,6 @@ func (driver *GremlinDriver) First(v any, id any) error {
 	if err != nil {
 		return err
 	}
-
-	reflect.ValueOf(v).Elem().FieldByName("Id").Set(reflect.ValueOf(id))
 
 	result, err := driver.g.V(id).ElementMap().Next()
 	if err != nil {
@@ -28,7 +26,10 @@ func (driver *GremlinDriver) First(v any, id any) error {
 }
 
 func unloadResultIntoStruct(v any, result *gremlingo.Result) error {
-	mapResult := result.GetInterface().(map[any]any)
+	mapResult, ok := result.GetInterface().(map[any]any)
+	if !ok {
+		return errors.New("result is not a map")
+	}
 
 	// make string map
 	stringMap := make(map[string]any)

@@ -10,11 +10,11 @@ import (
 
 type TestVertex struct {
 	types.Vertex
-	Test        string   `json:"test"        gremlin:"test"`
-	Test2       string   `json:"test2"       gremlin:"test2"`
-	OtherField  int      `json:"otherField"  gremlin:"otherField"`
-	OtherField2 string   `json:"otherField2" gremlin:"otherField2"`
-	OtherFields []string `json:"otherFields" gremlin:"otherFields"`
+	Test        string   `json:"test"        `
+	Test2       string   `json:"test2"       `
+	OtherField  int      `json:"otherField"  `
+	OtherField2 string   `json:"otherField2" `
+	OtherFields []string `json:"otherFields" `
 }
 
 func main() {
