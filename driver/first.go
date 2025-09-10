@@ -18,36 +18,45 @@ func (driver *GremlinDriver) First(v any, id any) error {
 		return err
 	}
 
-	err = unloadResultIntoStruct(v, result)
+	err = unloadGremlinResultIntoStruct(v, result)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func unloadResultIntoStruct(v any, result *gremlingo.Result) error {
+func unloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {
 	mapResult, ok := result.GetInterface().(map[any]any)
 	if !ok {
 		return errors.New("result is not a map")
 	}
-
 	// make string map
 	stringMap := make(map[string]any)
 	for key, value := range mapResult {
 		stringMap[key.(string)] = value
 	}
-
 	rv := reflect.ValueOf(v)
 
 	if rv.Kind() != reflect.Ptr {
 		return errors.New("v must be a pointer")
 	}
-	rv = rv.Elem()
+	return recursivelyUnloadIntoStruct(v, stringMap)
+}
 
+func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) error {
+	rv := reflect.ValueOf(v).Elem()
 	rt := rv.Type()
 
 	for i := range rv.NumField() {
 		field := rv.Field(i)
+		fieldType := rt.Field(i)
+		// handle anonymous Vertex field
+		if fieldType.Anonymous {
+			err := recursivelyUnloadIntoStruct(field.Addr().Interface(), stringMap)
+			if err != nil {
+				return err
+			}
+		}
 
 		gremlinTag := rt.Field(i).Tag.Get("gremlin")
 		if gremlinTag == "" || gremlinTag == "-" || !field.CanInterface() || !field.CanSet() {
