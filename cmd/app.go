@@ -6,15 +6,22 @@ import (
 	"app/driver"
 	"app/log"
 	"app/types"
+	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
+
+type Nested struct {
+	NestedField string `json:"nestedField" gremlin:"nestedField"`
+}
 
 type TestVertex struct {
 	types.Vertex
-	Test        string   `json:"test"        gremlin:"test"`
-	Test2       string   `json:"test2"       gremlin:"test2"`
-	OtherField  int      `json:"otherField"  gremlin:"otherField"`
-	OtherField2 string   `json:"otherField2" gremlin:"otherField2"`
-	OtherFields []string `json:"otherFields" gremlin:"otherFields"`
+	Test        string            `json:"test"        gremlin:"test"`
+	Test2       string            `json:"test2"       gremlin:"test2"`
+	OtherField  int               `json:"otherField"  gremlin:"otherField"`
+	OtherField2 string            `json:"otherField2" gremlin:"otherField2"`
+	OtherFields []string          `json:"otherFields" gremlin:"otherFields"`
+	MapField    map[string]string `json:"mapField"    gremlin:"mapField"`
+	// Nest        Nested
 }
 
 func main() {
@@ -32,6 +39,10 @@ func main() {
 		OtherField:  1,
 		OtherField2: "otherField2",
 		OtherFields: []string{"otherField1", "otherField2"},
+		MapField:    map[string]string{"mapField1": "mapField1", "mapField2": "mapField2"},
+		// Nest: Nested{
+		// 	NestedField: "nested",
+		// },
 	}
 	err = db.Create(&test1)
 	if err != nil {
@@ -47,6 +58,13 @@ func main() {
 	}
 	elapsed := time.Since(start)
 	logger.Infof("First time: %s", elapsed)
+	var test3 TestVertex
+
+	err = db.First(&test3, gremlingo.T__.Has("test2", "test2"))
+	if err != nil {
+		return
+	}
 	logger.Info(test1)
 	logger.Info(test2)
+	logger.Info(test3)
 }

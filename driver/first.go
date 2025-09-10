@@ -13,7 +13,9 @@ func (driver *GremlinDriver) First(v any, id any) error {
 		return err
 	}
 
-	result, err := driver.g.V(id).ElementMap().Next()
+	structName := reflect.TypeOf(v).Elem().Name()
+
+	result, err := GremlinBaseQueryByIdOrTrav(driver.g, id, structName).ElementMap().Next()
 	if err != nil {
 		return err
 	}
@@ -23,6 +25,19 @@ func (driver *GremlinDriver) First(v any, id any) error {
 		return err
 	}
 	return nil
+}
+
+func GremlinBaseQueryByIdOrTrav(
+	g *gremlingo.GraphTraversalSource,
+	id any,
+	label string,
+) *gremlingo.GraphTraversal {
+	switch id.(type) {
+	case gremlingo.AnonymousTraversal, *gremlingo.GraphTraversal:
+		return g.V().HasLabel(label).Where(id)
+	default:
+		return g.V(id)
+	}
 }
 
 func unloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {

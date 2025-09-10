@@ -331,7 +331,7 @@ issues:
   # Set to 0 to disable.
   # Default: 3
   max-same-issues: 50
-  fix: true
+#  fix: true
 
   exclude-rules:
     - source: "(noinspection|TODO)"

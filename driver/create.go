@@ -61,7 +61,7 @@ func structToMap(value any) (string, map[any]any) {
 		fieldValue := rv.Field(i)
 
 		// Get the gremlin tag
-		gremlinTag := field.Tag.Get("json")
+		gremlinTag := field.Tag.Get("gremlin")
 
 		// Skip if no gremlin tag or if field is not exported
 		if gremlinTag == "" || gremlinTag == "-" || !fieldValue.CanInterface() {
