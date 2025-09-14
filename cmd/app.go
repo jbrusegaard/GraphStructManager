@@ -16,8 +16,6 @@ type TestVertex struct {
 	OtherField  int      `json:"otherField"  gremlin:"otherField"`
 	OtherField2 string   `json:"otherField2" gremlin:"otherField2"`
 	OtherFields []string `json:"otherFields" gremlin:"otherFields"`
-	// MapField    map[string]string `json:"mapField"    gremlin:"mapField"`
-	// Nest        Nested
 }
 
 func main() {
