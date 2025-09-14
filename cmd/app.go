@@ -15,12 +15,12 @@ type Nested struct {
 
 type TestVertex struct {
 	types.Vertex
-	Test        string            `json:"test"        gremlin:"test"`
-	Test2       string            `json:"test2"       gremlin:"test2"`
-	OtherField  int               `json:"otherField"  gremlin:"otherField"`
-	OtherField2 string            `json:"otherField2" gremlin:"otherField2"`
-	OtherFields []string          `json:"otherFields" gremlin:"otherFields"`
-	MapField    map[string]string `json:"mapField"    gremlin:"mapField"`
+	Test        string   `json:"test"        gremlin:"test"`
+	Test2       string   `json:"test2"       gremlin:"test2"`
+	OtherField  int      `json:"otherField"  gremlin:"otherField"`
+	OtherField2 string   `json:"otherField2" gremlin:"otherField2"`
+	OtherFields []string `json:"otherFields" gremlin:"otherFields"`
+	// MapField    map[string]string `json:"mapField"    gremlin:"mapField"`
 	// Nest        Nested
 }
 
@@ -39,7 +39,7 @@ func main() {
 		OtherField:  1,
 		OtherField2: "otherField2",
 		OtherFields: []string{"otherField1", "otherField2"},
-		MapField:    map[string]string{"mapField1": "mapField1", "mapField2": "mapField2"},
+		// MapField:    map[string]string{"mapField1": "mapField1", "mapField2": "mapField2"},
 		// Nest: Nested{
 		// 	NestedField: "nested",
 		// },
@@ -67,4 +67,13 @@ func main() {
 	logger.Info(test1)
 	logger.Info(test2)
 	logger.Info(test3)
+
+	allV, err := driver.Find[TestVertex](db, nil)
+	if err != nil {
+		return
+	}
+	logger.Info("looking through all vertices")
+	for k, v := range allV {
+		logger.Info(k, v)
+	}
 }
