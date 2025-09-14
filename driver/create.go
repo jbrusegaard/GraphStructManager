@@ -9,11 +9,11 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-func (driver *GremlinDriver) Create(value any) error {
+func Create[T any](db *GremlinDriver, value *T) error {
 	// Validate it's a struct pointer with anonymous Vertex
 	err := validateStructPointerWithAnonymousVertex(value)
 	if err != nil {
-		driver.logger.Errorf("Validation failed: %v", err)
+		db.logger.Errorf("Validation failed: %v", err)
 		return err
 	}
 
@@ -22,7 +22,7 @@ func (driver *GremlinDriver) Create(value any) error {
 	structName, mapValue := structToMap(value)
 	mapValue["lastModified"] = now
 
-	query := driver.g.AddV(structName)
+	query := db.g.AddV(structName)
 	for key, value := range mapValue {
 		rv := reflect.ValueOf(value)
 		switch rv.Kind() {

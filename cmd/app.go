@@ -9,10 +9,6 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-type Nested struct {
-	NestedField string `json:"nestedField" gremlin:"nestedField"`
-}
-
 type TestVertex struct {
 	types.Vertex
 	Test        string   `json:"test"        gremlin:"test"`
@@ -44,7 +40,7 @@ func main() {
 		// 	NestedField: "nested",
 		// },
 	}
-	err = db.Create(&test1)
+	err = driver.Create(db, &test1)
 	if err != nil {
 		logger.Fatal(err)
 	}
