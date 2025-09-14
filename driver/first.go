@@ -7,24 +7,18 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-func (driver *GremlinDriver) First(v any, id any) error {
-	err := validateStructPointerWithAnonymousVertex(v)
+func First[T any](db *GremlinDriver, id any) (T, error) {
+	var v T
+	structName, err := getStructName[T]()
 	if err != nil {
-		return err
+		return v, err
 	}
-
-	structName := reflect.TypeOf(v).Elem().Name()
-
-	result, err := GremlinBaseQueryByIdOrTrav(driver.g, id, structName).ElementMap().Next()
+	result, err := GremlinBaseQueryByIdOrTrav(db.g, id, structName).ElementMap().Next()
 	if err != nil {
-		return err
+		return v, err
 	}
-
-	err = unloadGremlinResultIntoStruct(v, result)
-	if err != nil {
-		return err
-	}
-	return nil
+	err = unloadGremlinResultIntoStruct(&v, result)
+	return v, err
 }
 
 func GremlinBaseQueryByIdOrTrav(

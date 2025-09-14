@@ -52,7 +52,7 @@ func main() {
 	var test2 TestVertex
 	// benchmark speed of first
 	start := time.Now()
-	err = db.First(&test2, test1.Id)
+	test2, err = driver.First[TestVertex](db, test1.Id)
 	if err != nil {
 		return
 	}
@@ -60,7 +60,7 @@ func main() {
 	logger.Infof("First time: %s", elapsed)
 	var test3 TestVertex
 
-	err = db.First(&test3, gremlingo.T__.Has("test2", "test2"))
+	test3, err = driver.First[TestVertex](db, gremlingo.T__.Has("test2", "test2"))
 	if err != nil {
 		return
 	}
