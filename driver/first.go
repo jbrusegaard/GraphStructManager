@@ -7,16 +7,24 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-func First[T any](db *GremlinDriver, id any) (T, error) {
+func First[T any](db *GremlinDriver, opts QueryOpts) (T, error) {
 	var v T
 	structName, err := getStructName[T]()
 	if err != nil {
 		return v, err
 	}
-	result, err := GremlinBaseQueryByIdOrTrav(db.g, id, structName).ElementMap().Next()
+	var result *gremlingo.Result
+	var id any
+	if opts.Id != nil {
+		id = opts.Id
+	} else if opts.Where != nil {
+		id = opts.Where
+	}
+	result, err = GremlinBaseQueryByIdOrTrav(db.g, id, structName).ElementMap().Next()
 	if err != nil {
 		return v, err
 	}
+
 	err = unloadGremlinResultIntoStruct(&v, result)
 	return v, err
 }

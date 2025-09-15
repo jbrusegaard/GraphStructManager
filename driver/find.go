@@ -3,18 +3,16 @@ package driver
 import (
 	"fmt"
 	"reflect"
-
-	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-func Find[T any](db *GremlinDriver, whereClause *gremlingo.GraphTraversal) ([]T, error) {
+func Find[T any](db *GremlinDriver, opts QueryOpts) ([]T, error) {
 	label, err := getStructName[T]()
 	if err != nil {
 		return nil, err
 	}
 	query := db.g.V().HasLabel(label)
-	if whereClause != nil {
-		query.Where(whereClause)
+	if opts.Where != nil {
+		query.Where(opts.Where)
 	}
 	queryResults, err := query.ElementMap().ToList()
 	if err != nil {

@@ -14,6 +14,11 @@ type GremlinDriver struct {
 	logger     *log.Logger
 }
 
+type QueryOpts struct {
+	Id    any
+	Where *gremlingo.GraphTraversal
+}
+
 func g(remoteConnection *gremlingo.DriverRemoteConnection) *gremlingo.GraphTraversalSource {
 	return gremlingo.Traversal_().WithRemote(remoteConnection)
 }
