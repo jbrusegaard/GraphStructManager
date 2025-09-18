@@ -7,7 +7,7 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-func First[T any](db *GremlinDriver, opts QueryOpts) (T, error) {
+func First[T VertexType](db *GremlinDriver, opts QueryOpts) (T, error) {
 	var v T
 	structName, err := getStructName[T]()
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
-func Create[T any](db *GremlinDriver, value *T) error {
+func Create[T VertexType](db *GremlinDriver, value *T) error {
 	// Validate it's a struct pointer with anonymous Vertex
 	err := validateStructPointerWithAnonymousVertex(value)
 	if err != nil {

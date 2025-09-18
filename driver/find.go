@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-func Find[T any](db *GremlinDriver, opts QueryOpts) ([]T, error) {
+func Find[T VertexType](db *GremlinDriver, opts QueryOpts) ([]T, error) {
 	label, err := getStructName[T]()
 	if err != nil {
 		return nil, err
