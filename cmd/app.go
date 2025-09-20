@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app/comparator"
 	GSM "app/gremlin/driver"
 	"app/log"
 	"app/types"
@@ -41,7 +42,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	test2, err := GSM.Model[TestVertex](db).Where("test", types.EQ, "test").First()
+	test2, err := GSM.Model[TestVertex](db).Where("test", comparator.EQ, "test").First()
 	if err != nil {
 		logger.Fatal(err)
 	}

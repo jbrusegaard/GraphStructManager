@@ -64,39 +64,39 @@ Adds a condition to the query using comparison operators.
 
 **Signature:**
 ```go
-func (q *Query[T]) Where(field string, operator types.Comparitor, value any) *Query[T]
+func (q *Query[T]) Where(field string, operator comparator.Comparator, value any) *Query[T]
 ```
 
 **Examples:**
 ```go
 // Equal comparison
-users := GSM.Model[TestVertex](db).Where("name", types.EQ, "John")
+users := GSM.Model[TestVertex](db).Where("name", comparator.EQ, "John")
 
 // Not equal
-users := GSM.Model[TestVertex](db).Where("age", types.NEQ, 25)
+users := GSM.Model[TestVertex](db).Where("age", comparator.NEQ, 25)
 
 // Greater than
-users := GSM.Model[TestVertex](db).Where("age", types.GT, 18)
+users := GSM.Model[TestVertex](db).Where("age", comparator.GT, 18)
 
 // Greater than or equal
-users := GSM.Model[TestVertex](db).Where("age", types.GTE, 21)
+users := GSM.Model[TestVertex](db).Where("age", comparator.GTE, 21)
 
 // Less than
-users := GSM.Model[TestVertex](db).Where("age", types.LT, 65)
+users := GSM.Model[TestVertex](db).Where("age", comparator.LT, 65)
 
 // Less than or equal
-users := GSM.Model[TestVertex](db).Where("age", types.LTE, 30)
+users := GSM.Model[TestVertex](db).Where("age", comparator.LTE, 30)
 
 // In array
-users := GSM.Model[TestVertex](db).Where("name", types.IN, []any{"John", "Jane", "Bob"})
+users := GSM.Model[TestVertex](db).Where("name", comparator.IN, []any{"John", "Jane", "Bob"})
 
 // Contains (for string fields)
-users := GSM.Model[TestVertex](db).Where("email", types.CONTAINS, "@gmail.com")
+users := GSM.Model[TestVertex](db).Where("email", comparator.CONTAINS, "@gmail.com")
 
 // Chain multiple conditions
 users := GSM.Model[TestVertex](db).
-    Where("age", types.GT, 18).
-    Where("email", types.CONTAINS, "@company.com")
+    Where("age", comparator.GT, 18).
+    Where("email", comparator.CONTAINS, "@company.com")
 ```
 
 ### WhereTraversal
@@ -120,7 +120,7 @@ users := GSM.Model[TestVertex](db).
 
 // Combine with regular Where conditions
 users := GSM.Model[TestVertex](db).
-    Where("name", types.EQ, "John").
+    Where("name", comparator.EQ, "John").
     WhereTraversal(gremlingo.T__.Has("email", gremlingo.P.StartingWith("j")))
 ```
 
@@ -137,12 +137,12 @@ func (q *Query[T]) Dedup() *Query[T]
 ```go
 // Remove duplicates
 uniqueUsers := GSM.Model[TestVertex](db).
-    Where("tags", types.CONTAINS, "developer").
+    Where("tags", comparator.CONTAINS, "developer").
     Dedup()
 
 // Chain with other operations
 users := GSM.Model[TestVertex](db).
-    Where("age", types.GT, 25).
+    Where("age", comparator.GT, 25).
     Dedup().
     OrderBy("name")
 ```
@@ -170,7 +170,7 @@ oldestUsers := GSM.Model[TestVertex](db).
 
 // Combine with where conditions
 activeUsers := GSM.Model[TestVertex](db).
-    Where("status", types.EQ, "active").
+    Where("status", comparator.EQ, "active").
     Limit(20)
 ```
 
@@ -228,7 +228,7 @@ users := GSM.Model[TestVertex](db).
 
 // Combine with filtering
 youngUsers := GSM.Model[TestVertex](db).
-    Where("age", types.LT, 30).
+    Where("age", comparator.LT, 30).
     OrderBy("age")
 ```
 
@@ -277,7 +277,7 @@ if err != nil {
 
 // Get filtered results
 activeUsers, err := GSM.Model[TestVertex](db).
-    Where("status", types.EQ, "active").
+    Where("status", comparator.EQ, "active").
     Find()
 
 // Get paginated results
@@ -288,8 +288,8 @@ users, err := GSM.Model[TestVertex](db).
 
 // Complex query
 developers, err := GSM.Model[TestVertex](db).
-    Where("department", types.EQ, "engineering").
-    Where("experience", types.GTE, 2).
+    Where("department", comparator.EQ, "engineering").
+    Where("experience", comparator.GTE, 2).
     OrderByDesc("salary").
     Find()
 ```
@@ -307,7 +307,7 @@ func (q *Query[T]) First() (T, error)
 ```go
 // Get first user by name
 user, err := GSM.Model[TestVertex](db).
-    Where("name", types.EQ, "John").
+    Where("name", comparator.EQ, "John").
     First()
 if err != nil {
     return err
@@ -320,12 +320,12 @@ oldestUser, err := GSM.Model[TestVertex](db).
 
 // Get user with specific email
 user, err := GSM.Model[TestVertex](db).
-    Where("email", types.EQ, "john@example.com").
+    Where("email", comparator.EQ, "john@example.com").
     First()
 
 // Handle not found
 user, err := GSM.Model[TestVertex](db).
-    Where("id", types.EQ, nonExistentId).
+    Where("id", comparator.EQ, nonExistentId).
     First()
 if err != nil {
     if err.Error() == "no more results" {
@@ -357,18 +357,18 @@ if err != nil {
 
 // Count active users
 activeCount, err := GSM.Model[TestVertex](db).
-    Where("status", types.EQ, "active").
+    Where("status", comparator.EQ, "active").
     Count()
 
 // Count users in age range
 adultsCount, err := GSM.Model[TestVertex](db).
-    Where("age", types.GTE, 18).
-    Where("age", types.LTE, 65).
+    Where("age", comparator.GTE, 18).
+    Where("age", comparator.LTE, 65).
     Count()
 
 // Check if any users exist with condition
 hasAdmins, err := GSM.Model[TestVertex](db).
-    Where("role", types.EQ, "admin").
+    Where("role", comparator.EQ, "admin").
     Count()
 if err != nil {
     return err
@@ -391,23 +391,23 @@ func (q *Query[T]) Delete() error
 ```go
 // Delete specific user
 err := GSM.Model[TestVertex](db).
-    Where("email", types.EQ, "user@example.com").
+    Where("email", comparator.EQ, "user@example.com").
     Delete()
 
 // Delete inactive users
 err := GSM.Model[TestVertex](db).
-    Where("status", types.EQ, "inactive").
+    Where("status", comparator.EQ, "inactive").
     Delete()
 
 // Delete users older than 100 (cleanup)
 err := GSM.Model[TestVertex](db).
-    Where("age", types.GT, 100).
+    Where("age", comparator.GT, 100).
     Delete()
 
 // Delete with multiple conditions
 err := GSM.Model[TestVertex](db).
-    Where("department", types.EQ, "temp").
-    Where("lastLogin", types.LT, oneYearAgo).
+    Where("department", comparator.EQ, "temp").
+    Where("lastLogin", comparator.LT, oneYearAgo).
     Delete()
 
 if err != nil {
@@ -444,7 +444,7 @@ func main() {
 
     // Read - Find user by email
     user, err := GSM.Model[TestVertex](db).
-        Where("email", types.EQ, "alice@example.com").
+        Where("email", comparator.EQ, "alice@example.com").
         First()
     if err != nil {
         log.Fatal(err)
@@ -455,7 +455,7 @@ func main() {
 
     // Delete - Remove user
     err = GSM.Model[TestVertex](db).
-        Where("email", types.EQ, "alice@example.com").
+        Where("email", comparator.EQ, "alice@example.com").
         Delete()
     if err != nil {
         log.Fatal(err)
@@ -478,26 +478,26 @@ func advancedQueries(db *GSM.GremlinDriver) {
 
     // Search with multiple filters
     seniorDevelopers, err := GSM.Model[TestVertex](db).
-        Where("age", types.GTE, 25).
-        Where("experience", types.GT, 3).
-        Where("tags", types.CONTAINS, "senior").
+        Where("age", comparator.GTE, 25).
+        Where("experience", comparator.GT, 3).
+        Where("tags", comparator.CONTAINS, "senior").
         OrderByDesc("experience").
         Find()
 
     // Count and statistics
     totalDevelopers, err := GSM.Model[TestVertex](db).
-        Where("tags", types.CONTAINS, "developer").
+        Where("tags", comparator.CONTAINS, "developer").
         Count()
 
     juniorCount, err := GSM.Model[TestVertex](db).
-        Where("tags", types.CONTAINS, "junior").
+        Where("tags", comparator.CONTAINS, "junior").
         Count()
 
     fmt.Printf("Total developers: %d, Junior: %d\n", totalDevelopers, juniorCount)
 
     // Complex query with custom traversal
     complexResults, err := GSM.Model[TestVertex](db).
-        Where("department", types.EQ, "engineering").
+        Where("department", comparator.EQ, "engineering").
         WhereTraversal(gremlingo.T__.Has("salary", gremlingo.P.Between(50000, 100000))).
         OrderByDesc("lastModified").
         Limit(20).
@@ -511,7 +511,7 @@ func advancedQueries(db *GSM.GremlinDriver) {
 func handleQueryErrors(db *GSM.GremlinDriver) {
     // Handle "not found" gracefully
     user, err := GSM.Model[TestVertex](db).
-        Where("id", types.EQ, "non-existent-id").
+        Where("id", comparator.EQ, "non-existent-id").
         First()
 
     if err != nil {
@@ -527,7 +527,7 @@ func handleQueryErrors(db *GSM.GremlinDriver) {
 
     // Check if results exist before processing
     count, err := GSM.Model[TestVertex](db).
-        Where("status", types.EQ, "pending").
+        Where("status", comparator.EQ, "pending").
         Count()
 
     if err != nil {
@@ -542,7 +542,7 @@ func handleQueryErrors(db *GSM.GremlinDriver) {
 
     // Process pending users
     pendingUsers, err := GSM.Model[TestVertex](db).
-        Where("status", types.EQ, "pending").
+        Where("status", comparator.EQ, "pending").
         Find()
     // ... process users
 }
@@ -550,18 +550,18 @@ func handleQueryErrors(db *GSM.GremlinDriver) {
 
 ## Comparison Operators
 
-The following comparison operators are available in the `types` package:
+The following comparison operators are available in the `comparator` package:
 
 | Operator | Constant | Description | Example |
 |----------|----------|-------------|---------|
-| `=` | `types.EQ` | Equal to | `Where("age", types.EQ, 25)` |
-| `!=` | `types.NEQ` | Not equal to | `Where("status", types.NEQ, "inactive")` |
-| `>` | `types.GT` | Greater than | `Where("age", types.GT, 18)` |
-| `>=` | `types.GTE` | Greater than or equal | `Where("score", types.GTE, 80)` |
-| `<` | `types.LT` | Less than | `Where("age", types.LT, 65)` |
-| `<=` | `types.LTE` | Less than or equal | `Where("attempts", types.LTE, 3)` |
-| `in` | `types.IN` | Value in array | `Where("role", types.IN, []any{"admin", "user"})` |
-| `contains` | `types.CONTAINS` | String contains | `Where("email", types.CONTAINS, "@gmail.com")` |
+| `=` | `comparator.EQ` | Equal to | `Where("age", comparator.EQ, 25)` |
+| `!=` | `comparator.NEQ` | Not equal to | `Where("status", comparator.NEQ, "inactive")` |
+| `>` | `comparator.GT` | Greater than | `Where("age", comparator.GT, 18)` |
+| `>=` | `comparator.GTE` | Greater than or equal | `Where("score", comparator.GTE, 80)` |
+| `<` | `comparator.LT` | Less than | `Where("age", comparator.LT, 65)` |
+| `<=` | `comparator.LTE` | Less than or equal | `Where("attempts", comparator.LTE, 3)` |
+| `in` | `comparator.IN` | Value in array | `Where("role", comparator.IN, []any{"admin", "user"})` |
+| `contains` | `comparator.CONTAINS` | String contains | `Where("email", comparator.CONTAINS, "@gmail.com")` |
 
 ## Performance Tips
 

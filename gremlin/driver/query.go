@@ -1,7 +1,7 @@
 package driver
 
 import (
-	"app/types"
+	"app/comparator"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
@@ -17,7 +17,7 @@ type Query[T VertexType] struct {
 
 type QueryCondition struct {
 	field     string
-	operator  types.Comparitor
+	operator  comparator.Comparator
 	value     any
 	traversal *gremlingo.GraphTraversal
 }
@@ -39,7 +39,7 @@ func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
 }
 
 // Where adds a condition to the query
-func (q *Query[T]) Where(field string, operator types.Comparitor, value any) *Query[T] {
+func (q *Query[T]) Where(field string, operator comparator.Comparator, value any) *Query[T] {
 	q.conditions = append(
 		q.conditions, QueryCondition{
 			field:    field,
@@ -62,9 +62,11 @@ func (q *Query[T]) WhereTraversal(traversal *gremlingo.GraphTraversal) *Query[T]
 
 // Dedup removes duplicate results from the query
 func (q *Query[T]) Dedup() *Query[T] {
-	q.conditions = append(q.conditions, QueryCondition{
-		traversal: gremlingo.T__.Dedup(),
-	})
+	q.conditions = append(
+		q.conditions, QueryCondition{
+			traversal: gremlingo.T__.Dedup(),
+		},
+	)
 	return q
 }
 
@@ -157,23 +159,23 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 			continue
 		}
 		switch condition.operator {
-		case types.EQ, "eq":
+		case comparator.EQ, "eq":
 			query = query.Has(condition.field, condition.value)
-		case types.NEQ, "neq":
+		case comparator.NEQ, "neq":
 			query = query.Has(condition.field, gremlingo.P.Neq(condition.value))
-		case types.GT, "gt":
+		case comparator.GT, "gt":
 			query = query.Has(condition.field, gremlingo.P.Gt(condition.value))
-		case types.GTE, "gte":
+		case comparator.GTE, "gte":
 			query = query.Has(condition.field, gremlingo.P.Gte(condition.value))
-		case types.LT, "lt":
+		case comparator.LT, "lt":
 			query = query.Has(condition.field, gremlingo.P.Lt(condition.value))
-		case types.LTE, "lte":
+		case comparator.LTE, "lte":
 			query = query.Has(condition.field, gremlingo.P.Lte(condition.value))
-		case types.IN:
+		case comparator.IN:
 			if slice, ok := condition.value.([]any); ok {
 				query = query.Has(condition.field, gremlingo.P.Within(slice...))
 			}
-		case types.CONTAINS:
+		case comparator.CONTAINS:
 			if strVal, ok := condition.value.(string); ok {
 				query = query.Has(condition.field, gremlingo.TextP.Containing(strVal))
 			}
