@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"app/types"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
@@ -16,7 +17,7 @@ type Query[T VertexType] struct {
 
 type QueryCondition struct {
 	field     string
-	operator  string
+	operator  types.Comparitor
 	value     any
 	traversal *gremlingo.GraphTraversal
 }
@@ -38,7 +39,7 @@ func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
 }
 
 // Where adds a condition to the query
-func (q *Query[T]) Where(field string, operator string, value any) *Query[T] {
+func (q *Query[T]) Where(field string, operator types.Comparitor, value any) *Query[T] {
 	q.conditions = append(
 		q.conditions, QueryCondition{
 			field:    field,
@@ -148,24 +149,26 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 			continue
 		}
 		switch condition.operator {
-		case "=", "eq":
+		case types.EQ, "eq":
 			query = query.Has(condition.field, condition.value)
-		case "!=", "neq":
+		case types.NEQ, "neq":
 			query = query.Has(condition.field, gremlingo.P.Neq(condition.value))
-		case ">", "gt":
+		case types.GT, "gt":
 			query = query.Has(condition.field, gremlingo.P.Gt(condition.value))
-		case ">=", "gte":
+		case types.GTE, "gte":
 			query = query.Has(condition.field, gremlingo.P.Gte(condition.value))
-		case "<", "lt":
+		case types.LT, "lt":
 			query = query.Has(condition.field, gremlingo.P.Lt(condition.value))
-		case "<=", "lte":
+		case types.LTE, "lte":
 			query = query.Has(condition.field, gremlingo.P.Lte(condition.value))
-		case "in":
+		case types.IN:
 			if slice, ok := condition.value.([]any); ok {
 				query = query.Has(condition.field, gremlingo.P.Within(slice...))
 			}
-		case "contains":
-			query = query.Has(condition.field, gremlingo.TextP.Containing(condition.value))
+		case types.CONTAINS:
+			if strVal, ok := condition.value.(string); ok {
+				query = query.Has(condition.field, gremlingo.TextP.Containing(strVal))
+			}
 		}
 	}
 

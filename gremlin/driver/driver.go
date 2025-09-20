@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	appLogger "app/log"
+	"app/types"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 	"github.com/charmbracelet/log"
 )
@@ -62,7 +63,7 @@ func Model[T VertexType](driver *GremlinDriver) *Query[T] {
 func Where[T VertexType](
 	driver *GremlinDriver,
 	field string,
-	operator string,
+	operator types.Comparitor,
 	value any,
 ) *Query[T] {
 	return NewQuery[T](driver).Where(field, operator, value)

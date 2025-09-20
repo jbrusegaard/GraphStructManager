@@ -1,7 +1,7 @@
 package main
 
 import (
-	"app/driver"
+	GSM "app/gremlin/driver"
 	"app/log"
 	"app/types"
 )
@@ -18,7 +18,7 @@ type TestVertex struct {
 func main() {
 	logger := log.InitializeLogger()
 	logger.Info("Logger initialized")
-	db, err := driver.Open("ws://localhost:8182")
+	db, err := GSM.Open("ws://localhost:8182")
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -36,18 +36,18 @@ func main() {
 		// },
 	}
 
-	err = driver.Create(db, &test1)
+	err = GSM.Create(db, &test1)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	test2, err := driver.Model[TestVertex](db).Where("test", "=", "test").First()
+	test2, err := GSM.Model[TestVertex](db).Where("test", types.EQ, "test").First()
 	if err != nil {
 		logger.Fatal(err)
 	}
 	logger.Info(test2)
 
-	// err = driver.Create(db, &test1)
+	// err = GSM.Create(db, &test1)
 	// if err != nil {
 	// 	logger.Fatal(err)
 	// }
@@ -55,7 +55,7 @@ func main() {
 	// var test2 TestVertex
 	// // benchmark speed of first
 	// start := time.Now()
-	// test2, err = driver.First[TestVertex](db, driver.QueryOpts{Id: test1.Id})
+	// test2, err = GSM.First[TestVertex](db, GSM.QueryOpts{Id: test1.Id})
 	// if err != nil {
 	// 	return
 	// }
@@ -63,9 +63,9 @@ func main() {
 	// logger.Infof("First time: %s", elapsed)
 	// var test3 TestVertex
 
-	// test3, err = driver.First[TestVertex](
+	// test3, err = GSM.First[TestVertex](
 	// 	db,
-	// 	driver.QueryOpts{Where: gremlingo.T__.Has("test2", "test2")},
+	// 	GSM.QueryOpts{Where: gremlingo.T__.Has("test2", "test2")},
 	// )
 	// if err != nil {
 	// 	return
@@ -74,7 +74,7 @@ func main() {
 	// logger.Info(test2)
 	// logger.Info(test3)
 
-	// allV, err := driver.Find[TestVertex](db, driver.QueryOpts{})
+	// allV, err := GSM.Find[TestVertex](db, GSM.QueryOpts{})
 	// if err != nil {
 	// 	return
 	// }
