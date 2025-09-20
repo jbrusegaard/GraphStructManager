@@ -42,3 +42,28 @@ func Open(url string) (*GremlinDriver, error) {
 func (driver *GremlinDriver) Close() {
 	driver.remoteConn.Close()
 }
+
+// Table returns a query builder for a specific label/table
+func (driver *GremlinDriver) Table(label string) *RawQuery {
+	return &RawQuery{
+		db:    driver,
+		label: label,
+	}
+}
+
+// Package-level generic functions
+
+// Model returns a new query builder for the specified type
+func Model[T VertexType](driver *GremlinDriver) *Query[T] {
+	return NewQuery[T](driver)
+}
+
+// Where is a convenience method that creates a new query with a condition
+func Where[T VertexType](
+	driver *GremlinDriver,
+	field string,
+	operator string,
+	value any,
+) *Query[T] {
+	return NewQuery[T](driver).Where(field, operator, value)
+}

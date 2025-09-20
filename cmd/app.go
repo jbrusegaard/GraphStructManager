@@ -1,12 +1,9 @@
 package main
 
 import (
-	"time"
-
 	"app/driver"
 	"app/log"
 	"app/types"
-	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
 type TestVertex struct {
@@ -38,39 +35,51 @@ func main() {
 		// 	NestedField: "nested",
 		// },
 	}
+
 	err = driver.Create(db, &test1)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	var test2 TestVertex
-	// benchmark speed of first
-	start := time.Now()
-	test2, err = driver.First[TestVertex](db, driver.QueryOpts{Id: test1.Id})
+	test2, err := driver.Model[TestVertex](db).Where("test", "=", "test").First()
 	if err != nil {
-		return
+		logger.Fatal(err)
 	}
-	elapsed := time.Since(start)
-	logger.Infof("First time: %s", elapsed)
-	var test3 TestVertex
-
-	test3, err = driver.First[TestVertex](
-		db,
-		driver.QueryOpts{Where: gremlingo.T__.Has("test2", "test2")},
-	)
-	if err != nil {
-		return
-	}
-	logger.Info(test1)
 	logger.Info(test2)
-	logger.Info(test3)
 
-	allV, err := driver.Find[TestVertex](db, driver.QueryOpts{})
-	if err != nil {
-		return
-	}
-	logger.Info("looking through all vertices")
-	for k, v := range allV {
-		logger.Info(k, v)
-	}
+	// err = driver.Create(db, &test1)
+	// if err != nil {
+	// 	logger.Fatal(err)
+	// }
+
+	// var test2 TestVertex
+	// // benchmark speed of first
+	// start := time.Now()
+	// test2, err = driver.First[TestVertex](db, driver.QueryOpts{Id: test1.Id})
+	// if err != nil {
+	// 	return
+	// }
+	// elapsed := time.Since(start)
+	// logger.Infof("First time: %s", elapsed)
+	// var test3 TestVertex
+
+	// test3, err = driver.First[TestVertex](
+	// 	db,
+	// 	driver.QueryOpts{Where: gremlingo.T__.Has("test2", "test2")},
+	// )
+	// if err != nil {
+	// 	return
+	// }
+	// logger.Info(test1)
+	// logger.Info(test2)
+	// logger.Info(test3)
+
+	// allV, err := driver.Find[TestVertex](db, driver.QueryOpts{})
+	// if err != nil {
+	// 	return
+	// }
+	// logger.Info("looking through all vertices")
+	// for k, v := range allV {
+	// 	logger.Info(k, v)
+	// }
 }
