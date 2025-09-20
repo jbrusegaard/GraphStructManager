@@ -179,6 +179,10 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 			if strVal, ok := condition.value.(string); ok {
 				query = query.Has(condition.field, gremlingo.TextP.Containing(strVal))
 			}
+		case comparator.WITHOUT:
+			if slice, ok := condition.value.([]any); ok {
+				query = query.Has(condition.field, gremlingo.P.Without(slice...))
+			}
 		}
 	}
 

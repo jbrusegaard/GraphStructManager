@@ -93,6 +93,9 @@ users := GSM.Model[TestVertex](db).Where("name", comparator.IN, []any{"John", "J
 // Contains (for string fields)
 users := GSM.Model[TestVertex](db).Where("email", comparator.CONTAINS, "@gmail.com")
 
+// Without (exclude values from array)
+users := GSM.Model[TestVertex](db).Where("status", comparator.WITHOUT, []any{"banned", "suspended"})
+
 // Chain multiple conditions
 users := GSM.Model[TestVertex](db).
     Where("age", comparator.GT, 18).
@@ -410,6 +413,12 @@ err := GSM.Model[TestVertex](db).
     Where("lastLogin", comparator.LT, oneYearAgo).
     Delete()
 
+// Delete users excluding certain roles
+err := GSM.Model[TestVertex](db).
+    Where("role", comparator.WITHOUT, []any{"admin", "super_admin"}).
+    Where("lastLogin", comparator.LT, sixMonthsAgo).
+    Delete()
+
 if err != nil {
     log.Printf("Failed to delete users: %v", err)
     return err
@@ -482,6 +491,12 @@ func advancedQueries(db *GSM.GremlinDriver) {
         Where("experience", comparator.GT, 3).
         Where("tags", comparator.CONTAINS, "senior").
         OrderByDesc("experience").
+        Find()
+
+    // Find active users excluding certain statuses
+    activeUsers, err := GSM.Model[TestVertex](db).
+        Where("status", comparator.WITHOUT, []any{"banned", "suspended", "deleted"}).
+        Where("lastLogin", comparator.GTE, thirtyDaysAgo).
         Find()
 
     // Count and statistics
@@ -562,6 +577,7 @@ The following comparison operators are available in the `comparator` package:
 | `<=` | `comparator.LTE` | Less than or equal | `Where("attempts", comparator.LTE, 3)` |
 | `in` | `comparator.IN` | Value in array | `Where("role", comparator.IN, []any{"admin", "user"})` |
 | `contains` | `comparator.CONTAINS` | String contains | `Where("email", comparator.CONTAINS, "@gmail.com")` |
+| `without` | `comparator.WITHOUT` | Exclude values from array | `Where("status", comparator.WITHOUT, []any{"banned", "suspended"})` |
 
 ## Performance Tips
 
