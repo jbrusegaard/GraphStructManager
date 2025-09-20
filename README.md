@@ -14,6 +14,11 @@ A type-safe, chainable query builder for Gremlin graph databases in Go. This ORM
 
 The query builder uses Go generics to provide type-safe operations on vertex types that implement the `VertexType` interface. All functions are chainable, allowing for fluent query construction.
 
+## Requirements
+
+- Go 1.25+
+- Gremlin 3.7.4
+
 ## Setup
 
 First, define your vertex struct with the required gremlin tags:
