@@ -60,6 +60,7 @@ func (q *Query[T]) WhereTraversal(traversal *gremlingo.GraphTraversal) *Query[T]
 	return q
 }
 
+// Dedup removes duplicate results from the query
 func (q *Query[T]) Dedup() *Query[T] {
 	q.conditions = append(q.conditions, QueryCondition{
 		traversal: gremlingo.T__.Dedup(),
