@@ -15,9 +15,10 @@ type Query[T VertexType] struct {
 }
 
 type QueryCondition struct {
-	field    string
-	operator string
-	value    any
+	field     string
+	operator  string
+	value     any
+	traversal *gremlingo.GraphTraversal
 }
 
 type OrderCondition struct {
@@ -38,11 +39,23 @@ func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
 
 // Where adds a condition to the query
 func (q *Query[T]) Where(field string, operator string, value any) *Query[T] {
-	q.conditions = append(q.conditions, QueryCondition{
-		field:    field,
-		operator: operator,
-		value:    value,
-	})
+	q.conditions = append(
+		q.conditions, QueryCondition{
+			field:    field,
+			operator: operator,
+			value:    value,
+		},
+	)
+	return q
+}
+
+// WhereTraversal adds a custom Gremlin traversal condition
+func (q *Query[T]) WhereTraversal(traversal *gremlingo.GraphTraversal) *Query[T] {
+	q.conditions = append(
+		q.conditions, QueryCondition{
+			traversal: traversal,
+		},
+	)
 	return q
 }
 
@@ -120,8 +133,8 @@ func (q *Query[T]) Count() (int, error) {
 // Delete deletes all matching results
 func (q *Query[T]) Delete() error {
 	query := q.buildQuery()
-	_, err := query.Drop().Next()
-	return err
+	err := query.Drop().Iterate()
+	return <-err
 }
 
 // buildQuery constructs the Gremlin traversal from the query conditions
@@ -130,6 +143,10 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 
 	// Apply conditions
 	for _, condition := range q.conditions {
+		if condition.traversal != nil {
+			query = query.Where(condition.traversal)
+			continue
+		}
 		switch condition.operator {
 		case "=", "eq":
 			query = query.Has(condition.field, condition.value)
