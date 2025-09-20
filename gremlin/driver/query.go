@@ -60,6 +60,13 @@ func (q *Query[T]) WhereTraversal(traversal *gremlingo.GraphTraversal) *Query[T]
 	return q
 }
 
+func (q *Query[T]) Dedup() *Query[T] {
+	q.conditions = append(q.conditions, QueryCondition{
+		traversal: gremlingo.T__.Dedup(),
+	})
+	return q
+}
+
 // Limit sets the maximum number of results
 func (q *Query[T]) Limit(limit int) *Query[T] {
 	q.limit = &limit

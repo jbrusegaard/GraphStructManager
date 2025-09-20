@@ -1,39 +1,86 @@
 package driver
 
+import (
+	"errors"
+	"fmt"
+	"reflect"
+
+	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+)
+
 type VertexType interface {
 	GetVertexId() any
 	GetVertexLastModified() int64
 }
 
-// validateIsVertexStruct validates that the parameter v has Vertex as an anonymous struct
-// func validateIsVertexStruct(v any) error {
-// 	rv := reflect.ValueOf(v)
-//
-// 	// Handle pointer types by getting the underlying value
-// 	if rv.Kind() == reflect.Ptr {
-// 		if rv.IsNil() {
-// 			return fmt.Errorf("value cannot be nil")
-// 		}
-// 		rv = rv.Elem()
-// 	}
-//
-// 	// Check if it's a struct
-// 	if rv.Kind() != reflect.Struct {
-// 		return fmt.Errorf("value must be a struct, got %s", rv.Kind())
-// 	}
-//
-// 	// Get the struct type
-// 	rt := rv.Type()
-//
-// 	// Check for anonymous Vertex field
-// 	for i := 0; i < rt.NumField(); i++ {
-// 		field := rt.Field(i)
-//
-// 		// Check if this field is anonymous and is of type types.Vertex
-// 		if field.Anonymous && field.Type == reflect.TypeOf(types.Vertex{}) {
-// 			return nil
-// 		}
-// 	}
-//
-// 	return fmt.Errorf("struct must contain anonymous types.Vertex field")
-// }
+// getStructName takes a generic type T, confirms it's a struct, and returns its name
+func getStructName[T any]() (string, error) {
+	var zero T
+	t := reflect.TypeOf(zero)
+	// Handle pointer types by getting the underlying type
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	// Check if T is a struct type
+	if t.Kind() != reflect.Struct {
+		return "", fmt.Errorf("type %s is not a struct, it's a %s", t.Name(), t.Kind())
+	}
+	return t.Name(), nil
+}
+
+func unloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {
+	mapResult, ok := result.GetInterface().(map[any]any)
+	if !ok {
+		return errors.New("result is not a map")
+	}
+	// make string map
+	stringMap := make(map[string]any)
+	for key, value := range mapResult {
+		stringMap[key.(string)] = value
+	}
+	rv := reflect.ValueOf(v)
+
+	if rv.Kind() != reflect.Ptr {
+		return errors.New("v must be a pointer")
+	}
+	return recursivelyUnloadIntoStruct(v, stringMap)
+}
+
+func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) error {
+	rv := reflect.ValueOf(v).Elem()
+	rt := rv.Type()
+
+	for i := range rv.NumField() {
+		field := rv.Field(i)
+		fieldType := rt.Field(i)
+		// handle anonymous Vertex field
+		if fieldType.Anonymous {
+			err := recursivelyUnloadIntoStruct(field.Addr().Interface(), stringMap)
+			if err != nil {
+				return err
+			}
+		}
+
+		gremlinTag := rt.Field(i).Tag.Get("gremlin")
+		if gremlinTag == "" || gremlinTag == "-" || !field.CanInterface() || !field.CanSet() {
+			continue
+		}
+		if _, ok := stringMap[gremlinTag]; !ok {
+			continue
+		}
+		gType := reflect.TypeOf(stringMap[gremlinTag])
+
+		if gType.ConvertibleTo(field.Type()) {
+			field.Set(reflect.ValueOf(stringMap[gremlinTag]).Convert(field.Type()))
+		} else if gType.Kind() == reflect.Slice {
+			slice := reflect.MakeSlice(
+				field.Type(), len(stringMap[gremlinTag].([]any)), len(stringMap[gremlinTag].([]any)),
+			)
+			for i, v := range stringMap[gremlinTag].([]any) {
+				slice.Index(i).Set(reflect.ValueOf(v).Convert(field.Type().Elem()))
+			}
+			field.Set(slice)
+		}
+	}
+	return nil
+}
