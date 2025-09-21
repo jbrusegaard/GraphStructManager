@@ -12,7 +12,7 @@ type Query[T VertexType] struct {
 	label      string
 	limit      *int
 	offset     *int
-	orderBy    []OrderCondition
+	orderBy    *OrderCondition
 }
 
 type QueryCondition struct {
@@ -34,7 +34,7 @@ func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
 		db:         db,
 		conditions: make([]QueryCondition, 0),
 		label:      label,
-		orderBy:    make([]OrderCondition, 0),
+		orderBy:    nil,
 	}
 }
 
@@ -84,13 +84,25 @@ func (q *Query[T]) Offset(offset int) *Query[T] {
 
 // OrderBy adds ordering to the query
 func (q *Query[T]) OrderBy(field string) *Query[T] {
-	q.orderBy = append(q.orderBy, OrderCondition{field: field, desc: false})
+	if q.orderBy != nil {
+		q.db.logger.Warnf(
+			"Order by was already defined overriding to Order By Asc with field %s",
+			field,
+		)
+	}
+	q.orderBy = &OrderCondition{field: field, desc: false}
 	return q
 }
 
 // OrderByDesc adds descending ordering to the query
 func (q *Query[T]) OrderByDesc(field string) *Query[T] {
-	q.orderBy = append(q.orderBy, OrderCondition{field: field, desc: true})
+	if q.orderBy != nil {
+		q.db.logger.Warnf(
+			"Order by was already defined overriding to Order By Desc with field %s",
+			field,
+		)
+	}
+	q.orderBy = &OrderCondition{field: field, desc: true}
 	return q
 }
 
@@ -186,12 +198,11 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 		}
 	}
 
-	// Apply ordering
-	for _, order := range q.orderBy {
-		if order.desc {
-			query = query.Order().By(order.field, gremlingo.Order.Desc)
+	if q.orderBy != nil {
+		if q.orderBy.desc {
+			query.Order().By(q.orderBy.field, gremlingo.Order.Desc)
 		} else {
-			query = query.Order().By(order.field, gremlingo.Order.Asc)
+			query.Order().By(q.orderBy.field, gremlingo.Order.Asc)
 		}
 	}
 
