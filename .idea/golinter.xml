@@ -3,7 +3,6 @@
   <component name="GoLinterSettings">
     <option name="concurrency" value="6" />
     <option name="customConfigFile" value="$PROJECT_DIR$/.golangci.yml" />
-    <option name="fastOnly" value="false" />
     <option name="useCustomConfigFile" value="true" />
   </component>
 </project>
