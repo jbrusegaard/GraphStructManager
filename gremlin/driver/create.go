@@ -24,8 +24,18 @@ func Create[T VertexType](db *GremlinDriver, value *T) error {
 	for key, value := range mapValue {
 		rv := reflect.ValueOf(value)
 		switch rv.Kind() {
-		case reflect.Slice, reflect.Map:
-			query.Property(gremlingo.Cardinality.Set, key, value)
+		case reflect.Slice:
+			if slice, ok := value.([]any); ok {
+				for _, v := range slice {
+					query.Property(gremlingo.Cardinality.Set, key, v)
+				}
+			}
+		case reflect.Map:
+			if mapVal, ok := value.(map[string]any); ok {
+				for k := range mapVal {
+					query.Property(gremlingo.Cardinality.Set, key, k)
+				}
+			}
 		default:
 			query.Property(gremlingo.Cardinality.Single, key, value)
 		}
