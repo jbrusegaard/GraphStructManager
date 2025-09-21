@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"app/types"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
@@ -83,4 +84,74 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) error {
 		}
 	}
 	return nil
+}
+
+func structToMap(value any) (string, map[any]any) {
+	mapValue := make(map[any]any)
+
+	// Get the reflection value
+	rv := reflect.ValueOf(value)
+
+	// Check if it's a pointer and get the underlying value
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	// Get the type information
+	rt := rv.Type()
+
+	// Loop through all fields
+	for i := range rv.NumField() {
+		field := rt.Field(i)
+		fieldValue := rv.Field(i)
+
+		// Get the gremlin tag
+		gremlinTag := field.Tag.Get("gremlin")
+
+		// Skip if no gremlin tag or if field is not exported
+		if gremlinTag == "" || gremlinTag == "-" || !fieldValue.CanInterface() {
+			continue
+		}
+
+		// Get the field value
+		fieldInterface := fieldValue.Interface()
+
+		// Use the gremlin tag as the property name
+		mapValue[gremlinTag] = fieldInterface
+	}
+
+	return rv.Type().Name(), mapValue
+}
+
+func validateStructPointerWithAnonymousVertex(value any) error {
+	rv := reflect.ValueOf(value)
+
+	// Check if it's a pointer
+	if rv.Kind() != reflect.Ptr {
+		return fmt.Errorf("value must be a pointer")
+	}
+
+	// Check if it's a nil pointer
+	if rv.IsNil() {
+		return fmt.Errorf("value cannot be nil")
+	}
+
+	// Check if it points to a struct
+	if rv.Elem().Kind() != reflect.Struct {
+		return fmt.Errorf("value must point to a struct")
+	}
+
+	// Get the struct type
+	rt := rv.Elem().Type()
+
+	// Check for anonymous Vertex field
+	for i := 0; i < rv.Elem().NumField(); i++ {
+		field := rt.Field(i)
+
+		if field.Anonymous && field.Type == reflect.TypeOf(types.Vertex{}) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("struct must contain anonymous types.Vertex field")
 }
