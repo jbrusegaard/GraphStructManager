@@ -13,3 +13,11 @@ first-setup:
 .PHONY: go-lint
 go-lint:
 	golangci-lint run --fix --allow-parallel-runners
+
+.PHONY: test-cov
+test-cov:
+	go test -cover ./...
+
+.PHONY: test
+test:
+	go test ./...
