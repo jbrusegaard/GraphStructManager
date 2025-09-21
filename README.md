@@ -7,6 +7,19 @@ A type-safe, chainable query builder for Gremlin graph databases in Go. This ORM
 - [Overview](#overview)
 - [Setup](#setup)
 - [Query Builder Functions](#query-builder-functions)
+  - [NewQuery](#newquery)
+  - [Where](#where)
+  - [WhereTraversal](#wheretraversal)
+  - [Dedup](#dedup)
+  - [Limit](#limit)
+  - [Offset](#offset)
+  - [OrderBy](#orderby)
+  - [OrderByDesc](#orderbydesc)
+  - [Find](#find)
+  - [First](#first)
+  - [Count](#count)
+  - [Id](#id)
+  - [Delete](#delete)
 - [Complete Examples](#complete-examples)
 - [Comparison Operators](#comparison-operators)
 
@@ -386,6 +399,39 @@ if hasAdmins > 0 {
 }
 ```
 
+### Id
+
+Finds a vertex by its ID using direct graph index lookup for optimal performance.
+
+**Signature:**
+```go
+func (q *Query[T]) Id(id any) (T, error)
+```
+
+**Examples:**
+```go
+// Find user by ID (most efficient lookup)
+user, err := GSM.Model[TestVertex](db).Id("user-123")
+if err != nil {
+    return err
+}
+
+// Find vertex by numeric ID
+vertex, err := GSM.Model[TestVertex](db).Id(12345)
+if err != nil {
+    if err.Error() == "no more results" {
+        fmt.Println("Vertex not found")
+    } else {
+        return err
+    }
+}
+
+// Using with UUID
+import "github.com/google/uuid"
+userID := uuid.New()
+user, err := GSM.Model[TestVertex](db).Id(userID)
+```
+
 ### Delete
 
 Deletes all vertices matching the query conditions.
@@ -464,6 +510,13 @@ func main() {
         log.Fatal(err)
     }
     fmt.Printf("Found user: %+v\n", user)
+
+    // Read by ID (fastest lookup method)
+    userByID, err := GSM.Model[TestVertex](db).Id(newUser.Id)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Found user by ID: %+v\n", userByID)
 
     // Update would typically involve Create with existing ID
 
@@ -586,11 +639,12 @@ The following comparison operators are available in the `comparator` package:
 
 ## Performance Tips
 
-1. **Use Count() for existence checks** instead of Find() when you only need to know if records exist
-2. **Apply filters early** in the chain to reduce the dataset size
-3. **Use Limit()** for large result sets to prevent memory issues
-4. **Order results** consistently when using Offset() for pagination
-5. **Consider using indices** on frequently queried fields in your Gremlin database
+1. **Use Id() for direct lookups** when you know the vertex ID - this hits the graph index directly and is the fastest lookup method
+2. **Use Count() for existence checks** instead of Find() when you only need to know if records exist
+3. **Apply filters early** in the chain to reduce the dataset size
+4. **Use Limit()** for large result sets to prevent memory issues
+5. **Order results** consistently when using Offset() for pagination
+6. **Consider using indices** on frequently queried fields in your Gremlin database
 
 ## Thread Safety
 

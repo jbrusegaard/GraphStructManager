@@ -160,6 +160,18 @@ func (q *Query[T]) Delete() error {
 	return <-err
 }
 
+// Id finds vertex by id in a more optimized way than using where
+func (q *Query[T]) Id(id any) (T, error) {
+	var v T
+	query := q.db.g.V(id)
+	result, err := query.ElementMap().Next()
+	if err != nil {
+		return v, err
+	}
+	err = unloadGremlinResultIntoStruct(&v, result)
+	return v, err
+}
+
 // buildQuery constructs the Gremlin traversal from the query conditions
 func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 	query := q.db.g.V().HasLabel(q.label)
@@ -172,7 +184,11 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 		}
 		switch condition.operator {
 		case comparator.EQ, "eq":
-			query = query.Has(condition.field, condition.value)
+			if condition.field == "id" {
+				query = query.HasId(condition.value)
+			} else {
+				query = query.Has(condition.field, condition.value)
+			}
 		case comparator.NEQ, "neq":
 			query = query.Has(condition.field, gremlingo.P.Neq(condition.value))
 		case comparator.GT, "gt":
