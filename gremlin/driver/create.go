@@ -25,13 +25,12 @@ func Create[T VertexType](db *GremlinDriver, value *T) error {
 		rv := reflect.ValueOf(value)
 		switch rv.Kind() {
 		case reflect.Slice:
-			if slice, ok := value.([]any); ok {
-				for _, v := range slice {
-					query.Property(gremlingo.Cardinality.Set, key, v)
-				}
+			sliceLen := rv.Len()
+			for i := range sliceLen {
+				query.Property(gremlingo.Cardinality.Set, key, rv.Index(i).Interface())
 			}
 		case reflect.Map:
-			if mapVal, ok := value.(map[string]any); ok {
+			if mapVal, ok := rv.Interface().(map[string]any); ok {
 				for k := range mapVal {
 					query.Property(gremlingo.Cardinality.Set, key, k)
 				}

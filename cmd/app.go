@@ -7,13 +7,11 @@ import (
 	"app/types"
 )
 
-type TestVertex struct {
+type VertexTesting struct {
 	types.Vertex
-	Test        string   `json:"test"        gremlin:"test"`
-	Test2       string   `json:"test2"       gremlin:"test2"`
-	OtherField  int      `json:"otherField"  gremlin:"otherField"`
-	OtherField2 string   `json:"otherField2" gremlin:"otherField2"`
-	OtherFields []string `json:"otherFields" gremlin:"otherFields"`
+	TestString string   `json:"testString" gremlin:"testString"`
+	TestInt    int      `json:"testInt"    gremlin:"testInt"`
+	TestList   []string `json:"testList"   gremlin:"testList"`
 }
 
 func main() {
@@ -25,12 +23,10 @@ func main() {
 	}
 	defer db.Close()
 
-	test1 := TestVertex{
-		Test:        "test",
-		Test2:       "test2",
-		OtherField:  1,
-		OtherField2: "otherField2",
-		OtherFields: []string{"otherField1", "otherField2"},
+	test1 := VertexTesting{
+		TestString: "test",
+		TestInt:    1,
+		TestList:   []string{"otherField1", "otherField2"},
 		// MapField:    map[string]string{"mapField1": "mapField1", "mapField2": "mapField2"},
 		// Nest: Nested{
 		// 	NestedField: "nested",
@@ -42,7 +38,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	test2, err := GSM.Model[TestVertex](db).Where("test", comparator.EQ, "test").First()
+	test2, err := GSM.Model[VertexTesting](db).Where("testString", comparator.EQ, "test").First()
 	if err != nil {
 		logger.Fatal(err)
 	}
