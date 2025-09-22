@@ -9,9 +9,31 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
+var __ = gremlingo.T__
+var P = gremlingo.P
+var Order = gremlingo.Order
+var Scope = gremlingo.Scope
+
+type GremlinOrder int
+
+const (
+	Asc GremlinOrder = iota
+	Desc
+)
+
 type VertexType interface {
 	GetVertexId() any
 	GetVertexLastModified() int64
+}
+
+func toMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.GraphTraversal {
+	return query.ValueMap(args...).By(
+		__.Choose(
+			__.Count(Scope.Local).Is(P.Eq(1)),
+			__.Unfold(),
+			__.Identity(),
+		),
+	)
 }
 
 // getStructName takes a generic type T, confirms it's a struct, and returns its name

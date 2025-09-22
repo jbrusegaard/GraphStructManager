@@ -83,33 +83,21 @@ func (q *Query[T]) Offset(offset int) *Query[T] {
 }
 
 // OrderBy adds ordering to the query
-func (q *Query[T]) OrderBy(field string) *Query[T] {
+func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T] {
 	if q.orderBy != nil {
-		q.db.logger.Warnf(
-			"Order by was already defined overriding to Order By Asc with field %s",
-			field,
+		q.db.logger.Warn(
+			"Order by was already defined secondary order by will override original order",
 		)
 	}
-	q.orderBy = &OrderCondition{field: field, desc: false}
-	return q
-}
-
-// OrderByDesc adds descending ordering to the query
-func (q *Query[T]) OrderByDesc(field string) *Query[T] {
-	if q.orderBy != nil {
-		q.db.logger.Warnf(
-			"Order by was already defined overriding to Order By Desc with field %s",
-			field,
-		)
-	}
-	q.orderBy = &OrderCondition{field: field, desc: true}
+	desc := order != 0
+	q.orderBy = &OrderCondition{field: field, desc: desc}
 	return q
 }
 
 // Find executes the query and returns all matching results
 func (q *Query[T]) Find() ([]T, error) {
 	query := q.buildQuery()
-	queryResults, err := query.ElementMap().ToList()
+	queryResults, err := toMapTraversal(query, true).ToList()
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +118,7 @@ func (q *Query[T]) Find() ([]T, error) {
 func (q *Query[T]) First() (T, error) {
 	var v T
 	query := q.buildQuery()
-	result, err := query.ElementMap().Next()
+	result, err := toMapTraversal(query, true).Next()
 	if err != nil {
 		return v, err
 	}
@@ -164,7 +152,7 @@ func (q *Query[T]) Delete() error {
 func (q *Query[T]) Id(id any) (T, error) {
 	var v T
 	query := q.db.g.V(id)
-	result, err := query.ElementMap().Next()
+	result, err := toMapTraversal(query, true).Next()
 	if err != nil {
 		return v, err
 	}
@@ -216,9 +204,9 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 
 	if q.orderBy != nil {
 		if q.orderBy.desc {
-			query.Order().By(q.orderBy.field, gremlingo.Order.Desc)
+			query.Order().By(q.orderBy.field, Order.Desc)
 		} else {
-			query.Order().By(q.orderBy.field, gremlingo.Order.Asc)
+			query.Order().By(q.orderBy.field, Order.Asc)
 		}
 	}
 
