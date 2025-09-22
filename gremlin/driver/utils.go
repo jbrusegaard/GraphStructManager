@@ -38,8 +38,8 @@ func toMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.Gra
 
 // getStructName takes a generic type T, confirms it's a struct, and returns its name
 func getStructName[T any]() (string, error) {
-	var zero T
-	t := reflect.TypeOf(zero)
+	var s T
+	t := reflect.TypeOf(s)
 	// Handle pointer types by getting the underlying type
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
