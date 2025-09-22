@@ -14,7 +14,6 @@ A type-safe, chainable query builder for Gremlin graph databases in Go. This ORM
   - [Limit](#limit)
   - [Offset](#offset)
   - [OrderBy](#orderby)
-  - [OrderByDesc](#orderbydesc)
   - [Find](#find)
   - [First](#first)
   - [Count](#count)
@@ -46,9 +45,15 @@ type TestVertex struct {
 }
 ```
 
-Connect to your Gremlin database:
+Import the necessary packages and connect to your Gremlin database:
 
 ```go
+import (
+    "app/gremlin/driver"
+    "app/comparator"
+    // ... other imports
+)
+
 db, err := GSM.Open("ws://localhost:8182")
 if err != nil {
     log.Fatal(err)
@@ -165,7 +170,7 @@ uniqueUsers := GSM.Model[TestVertex](db).
 users := GSM.Model[TestVertex](db).
     Where("age", comparator.GT, 25).
     Dedup().
-    OrderBy("name")
+    OrderBy("name", driver.Asc)
 ```
 
 ### Limit
@@ -181,12 +186,12 @@ func (q *Query[T]) Limit(limit int) *Query[T]
 ```go
 // Get first 10 users
 users := GSM.Model[TestVertex](db).
-    OrderBy("name").
+    OrderBy("name", driver.Asc).
     Limit(10)
 
 // Top 5 oldest users
 oldestUsers := GSM.Model[TestVertex](db).
-    OrderByDesc("age").
+    OrderBy("age", driver.Desc).
     Limit(5)
 
 // Combine with where conditions
@@ -208,7 +213,7 @@ func (q *Query[T]) Offset(offset int) *Query[T]
 ```go
 // Skip first 20 results (page 2 with 20 per page)
 users := GSM.Model[TestVertex](db).
-    OrderBy("name").
+    OrderBy("name", driver.Asc).
     Offset(20).
     Limit(20)
 
@@ -220,7 +225,7 @@ users := GSM.Model[TestVertex](db).
 // Pagination helper function
 func getPage(db *GSM.GremlinDriver, page, pageSize int) ([]TestVertex, error) {
     return GSM.Model[TestVertex](db).
-        OrderBy("id").
+        OrderBy("id", driver.Asc).
         Offset((page - 1) * pageSize).
         Limit(pageSize).
         Find()
@@ -229,55 +234,33 @@ func getPage(db *GSM.GremlinDriver, page, pageSize int) ([]TestVertex, error) {
 
 ### OrderBy
 
-Adds ascending ordering to the query.
+Adds ordering to the query with ascending or descending direction.
 
 **Signature:**
 ```go
-func (q *Query[T]) OrderBy(field string) *Query[T]
+func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T]
 ```
+
+**Order Constants:**
+- `driver.Asc` - Ascending order
+- `driver.Desc` - Descending order
 
 **Examples:**
 ```go
 // Order by name (ascending)
 users := GSM.Model[TestVertex](db).
-    OrderBy("name")
+    OrderBy("name", driver.Asc)
 
-// Order by age, then by name
+// Order by age (descending)
 users := GSM.Model[TestVertex](db).
-    OrderBy("age").
-    OrderBy("name")
+    OrderBy("age", driver.Desc)
 
 // Combine with filtering
 youngUsers := GSM.Model[TestVertex](db).
     Where("age", comparator.LT, 30).
-    OrderBy("age")
+    OrderBy("age", driver.Asc)
 ```
 
-### OrderByDesc
-
-Adds descending ordering to the query.
-
-**Signature:**
-```go
-func (q *Query[T]) OrderByDesc(field string) *Query[T]
-```
-
-**Examples:**
-```go
-// Order by age (descending)
-users := GSM.Model[TestVertex](db).
-    OrderByDesc("age")
-
-// Multiple ordering: newest first, then by name
-users := GSM.Model[TestVertex](db).
-    OrderByDesc("lastModified").
-    OrderBy("name")
-
-// Top earners
-topUsers := GSM.Model[TestVertex](db).
-    OrderByDesc("salary").
-    Limit(10)
-```
 
 ### Find
 
@@ -303,7 +286,7 @@ activeUsers, err := GSM.Model[TestVertex](db).
 
 // Get paginated results
 users, err := GSM.Model[TestVertex](db).
-    OrderBy("name").
+    OrderBy("name", driver.Asc).
     Limit(50).
     Find()
 
@@ -311,7 +294,7 @@ users, err := GSM.Model[TestVertex](db).
 developers, err := GSM.Model[TestVertex](db).
     Where("department", comparator.EQ, "engineering").
     Where("experience", comparator.GTE, 2).
-    OrderByDesc("salary").
+    OrderBy("salary", driver.Desc).
     Find()
 ```
 
@@ -336,7 +319,7 @@ if err != nil {
 
 // Get oldest user
 oldestUser, err := GSM.Model[TestVertex](db).
-    OrderByDesc("age").
+    OrderBy("age", driver.Desc).
     First()
 
 // Get user with specific email
@@ -538,7 +521,7 @@ func advancedQueries(db *GSM.GremlinDriver) {
     page := 2
     pageSize := 10
     users, err := GSM.Model[TestVertex](db).
-        OrderBy("name").
+        OrderBy("name", driver.Asc).
         Offset((page-1) * pageSize).
         Limit(pageSize).
         Find()
@@ -548,7 +531,7 @@ func advancedQueries(db *GSM.GremlinDriver) {
         Where("age", comparator.GTE, 25).
         Where("experience", comparator.GT, 3).
         Where("tags", comparator.CONTAINS, "senior").
-        OrderByDesc("experience").
+        OrderBy("experience", driver.Desc).
         Find()
 
     // Find active users excluding certain statuses
@@ -572,7 +555,7 @@ func advancedQueries(db *GSM.GremlinDriver) {
     complexResults, err := GSM.Model[TestVertex](db).
         Where("department", comparator.EQ, "engineering").
         WhereTraversal(gremlingo.T__.Has("salary", gremlingo.P.Between(50000, 100000))).
-        OrderByDesc("lastModified").
+        OrderBy("lastModified", driver.Desc).
         Limit(20).
         Find()
 }
