@@ -5,6 +5,7 @@ import (
 )
 
 func TestTypes(t *testing.T) {
+	t.Parallel()
 	vertex := Vertex{
 		Id: "1",
 	}

@@ -222,3 +222,13 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 
 	return query
 }
+
+func toMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.GraphTraversal {
+	return query.ValueMap(args...).By(
+		__.Choose(
+			__.Count(Scope.Local).Is(P.Eq(1)),
+			__.Unfold(),
+			__.Identity(),
+		),
+	)
+}
