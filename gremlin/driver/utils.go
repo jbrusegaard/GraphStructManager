@@ -52,10 +52,11 @@ func unloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {
 	if rv.Kind() != reflect.Ptr {
 		return errors.New("v must be a pointer")
 	}
-	return recursivelyUnloadIntoStruct(v, stringMap)
+	recursivelyUnloadIntoStruct(v, stringMap)
+	return nil
 }
 
-func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) error {
+func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 	rv := reflect.ValueOf(v).Elem()
 	rt := rv.Type()
 
@@ -64,10 +65,7 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) error {
 		fieldType := rt.Field(i)
 		// handle anonymous Vertex field
 		if fieldType.Anonymous {
-			err := recursivelyUnloadIntoStruct(field.Addr().Interface(), stringMap)
-			if err != nil {
-				return err
-			}
+			recursivelyUnloadIntoStruct(field.Addr().Interface(), stringMap)
 		}
 
 		gremlinTag := rt.Field(i).Tag.Get("gremlin")
@@ -91,10 +89,9 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) error {
 			field.Set(slice)
 		}
 	}
-	return nil
 }
 
-func structToMap(value any) (string, map[any]any) {
+func structToMap(value any) (string, map[any]any, error) {
 	mapValue := make(map[any]any)
 
 	// Get the reflection value
@@ -103,6 +100,10 @@ func structToMap(value any) (string, map[any]any) {
 	// Check if it's a pointer and get the underlying value
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
+	}
+
+	if rv.Kind() != reflect.Struct {
+		return "", nil, errors.New("value is not a struct")
 	}
 
 	// Get the type information
@@ -128,7 +129,7 @@ func structToMap(value any) (string, map[any]any) {
 		mapValue[gremlinTag] = fieldInterface
 	}
 
-	return rv.Type().Name(), mapValue
+	return rv.Type().Name(), mapValue, nil
 }
 
 func validateStructPointerWithAnonymousVertex(value any) error {

@@ -17,7 +17,10 @@ func Create[T VertexType](db *GremlinDriver, value *T) error {
 
 	now := time.Now().Unix()
 
-	structName, mapValue := structToMap(value)
+	structName, mapValue, err := structToMap(value)
+	if err != nil {
+		return err
+	}
 	mapValue["lastModified"] = now
 
 	query := db.g.AddV(structName)

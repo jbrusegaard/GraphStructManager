@@ -66,4 +66,134 @@ func TestUtils(t *testing.T) {
 			}
 		},
 	)
+	unloadGremlinResultIntoStructTests := []struct {
+		testName  string
+		result    *gremlingo.Result
+		v         any
+		shouldErr bool
+	}{
+		{
+			result:    &gremlingo.Result{},
+			v:         &testVertexForUtils{},
+			shouldErr: true,
+			testName:  "UnloadGremlinResultIntoStructWithError",
+		},
+		{
+			result: &gremlingo.Result{
+				Data: map[any]any{
+					"id":           "1",
+					"lastModified": 1,
+					"name":         "test",
+					"listTest":     []string{"test1", "test2"},
+				},
+			},
+			v:         &testVertexForUtils{},
+			shouldErr: false,
+			testName:  "UnloadGremlinResultIntoStructTest",
+		},
+		{
+			result: &gremlingo.Result{
+				Data: map[any]any{
+					"id":           "1",
+					"lastModified": 1,
+					"name":         "test",
+					"listTest":     []any{"test1", "test2"},
+				},
+			},
+			v:         testVertexForUtils{},
+			shouldErr: true,
+			testName:  "UnloadGremlinResultIntoStructTestWithoutPointer",
+		},
+	}
+
+	for _, tt := range unloadGremlinResultIntoStructTests {
+		t.Run(
+			tt.testName, func(t *testing.T) {
+				t.Parallel()
+				err := unloadGremlinResultIntoStruct(tt.v, tt.result)
+				if (err != nil) != tt.shouldErr {
+					t.Errorf(
+						"unloadGremlinResultIntoStruct() error = %v, shouldErr %v",
+						err,
+						tt.shouldErr,
+					)
+				}
+			},
+		)
+	}
+
+	t.Run(
+		"TestStructToMap", func(t *testing.T) {
+			t.Parallel()
+			v := testVertexForUtils{
+				Name: "test",
+			}
+			name, mapValue, err := structToMap(v)
+			if err != nil {
+				t.Errorf("Error getting struct name: %v", err)
+			}
+			if name != "testVertexForUtils" {
+				t.Errorf("Struct name should be testVertexForUtils, got %s", name)
+			}
+			if mapValue["name"] != "test" {
+				t.Errorf("Struct name should be test, got %s", mapValue["name"])
+			}
+		},
+	)
+	t.Run(
+		"TestStructToMapPointer", func(t *testing.T) {
+			t.Parallel()
+			v := testVertexForUtils{
+				Name: "test",
+			}
+			name, mapValue, err := structToMap(&v)
+			if err != nil {
+				t.Errorf("Error getting struct name: %v", err)
+			}
+			if name != "testVertexForUtils" {
+				t.Errorf("Struct name should be testVertexForUtils, got %s", name)
+			}
+			if mapValue["name"] != "test" {
+				t.Errorf("Struct name should be test, got %s", mapValue["name"])
+			}
+		},
+	)
+	t.Run(
+		"TestStructToMapPointerError", func(t *testing.T) {
+			t.Parallel()
+			_, _, err := structToMap(1)
+			if err == nil {
+				t.Errorf("No error struct to map: %v", err)
+			}
+		},
+	)
+	var i *int
+	testsForValidatingStructPointer := []struct {
+		testName  string
+		v         any
+		shouldErr bool
+	}{
+		{testName: "testNil", v: nil, shouldErr: true},
+		{testName: "testStruct", v: gremlingo.Result{}, shouldErr: true},
+		{testName: "testStructPointer", v: &gremlingo.Result{}, shouldErr: true},
+		{testName: "testStructPointerPointer", v: &testVertexForUtils{}, shouldErr: false},
+		{testName: "testStructPointerPointerError", v: i, shouldErr: true},
+		{testName: "testStructPointerPointerErrorPointer", v: &i, shouldErr: true},
+	}
+	for _, tt := range testsForValidatingStructPointer {
+		t.Run(
+			tt.testName, func(t *testing.T) {
+				t.Parallel()
+				err := validateStructPointerWithAnonymousVertex(tt.v)
+				if (err != nil) != tt.shouldErr {
+					t.Errorf(
+						"validateStructPointerWithAnonymousVertex() error = %v, shouldErr %v",
+						err,
+						tt.shouldErr,
+					)
+				}
+			},
+		)
+	}
+
 }
