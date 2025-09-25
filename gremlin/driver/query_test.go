@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"app/comparator"
+	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
 
 func seedData(db *GremlinDriver, data []testVertexForUtils) error {
@@ -99,5 +100,64 @@ func TestQuery(t *testing.T) {
 			},
 		)
 	}
+	t.Run("TestQueryWhereTraversal", func(t *testing.T) {
+		t.Cleanup(cleanDB)
+		err = seedData(db, seededData)
+		if err != nil {
+			t.Error(err)
+		}
+		model := Model[testVertexForUtils](db).WhereTraversal(gremlingo.T__.Has("name", "second"))
+		result, err := model.First()
+		if err != nil {
+			t.Error(err)
+		}
+		if result.Name != "second" {
+			t.Errorf("Expected second result, got %s", result.Name)
+		}
+	})
+
+	t.Run("TestDelete", func(t *testing.T) {
+		t.Cleanup(cleanDB)
+		err = seedData(db, seededData)
+		if err != nil {
+			t.Error(err)
+		}
+		err := Model[testVertexForUtils](db).Limit(1).Delete()
+		if err != nil {
+			t.Error(err)
+		}
+		count, err := Model[testVertexForUtils](db).Count()
+		if err != nil {
+			t.Error(err)
+		}
+		if count != len(seededData)-1 {
+			t.Errorf("Expected %d results, got %d", len(seededData)-1, count)
+		}
+	})
+
+	t.Run("TestQueryById", func(t *testing.T) {
+		t.Cleanup(cleanDB)
+		err = seedData(db, seededData)
+		if err != nil {
+			t.Error(err)
+		}
+		model, err := Model[testVertexForUtils](db).First()
+		if err != nil {
+			t.Error(err)
+		}
+		result, err := Model[testVertexForUtils](db).Id(model.Id)
+		if err != nil {
+			t.Error(err)
+		}
+		if result.Name != model.Name {
+			t.Errorf("Expected %s result, got %s", model.Name, result.Name)
+		}
+		if result.Id != model.Id {
+			t.Errorf("Expected %s result, got %s", model.Id, result.Id)
+		}
+		if result.Sort != model.Sort {
+			t.Errorf("Expected %b result, got %b", model.Sort, result.Sort)
+		}
+	})
 
 }
