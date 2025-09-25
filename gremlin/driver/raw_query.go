@@ -39,12 +39,22 @@ func (rq *RawQuery) ToList() ([]*gremlingo.Result, error) {
 	if rq.traversal == nil {
 		rq.traversal = rq.db.g.V().HasLabel(rq.label)
 	}
-	return rq.traversal.ElementMap().ToList()
+	results, err := rq.traversal.ToList()
+	if err != nil {
+		return nil, err
+	}
+	rq.traversal = nil
+	return results, nil
 }
 
 func (rq *RawQuery) Next() (*gremlingo.Result, error) {
 	if rq.traversal == nil {
 		rq.traversal = rq.db.g.V().HasLabel(rq.label)
 	}
-	return rq.traversal.ElementMap().Next()
+	result, err := rq.traversal.ElementMap().Next()
+	if err != nil {
+		return nil, err
+	}
+	rq.traversal = nil
+	return result, nil
 }

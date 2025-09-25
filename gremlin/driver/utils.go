@@ -24,6 +24,7 @@ const (
 type VertexType interface {
 	GetVertexId() any
 	GetVertexLastModified() int64
+	GetVertexCreatedAt() int64
 }
 
 // getStructName takes a generic type T, confirms it's a struct, and returns its name

@@ -13,6 +13,12 @@ type testVertexForUtils struct {
 	Ignore   string   `json:"-"        gremlin:"-"`
 	ListTest []string `json:"listTest" gremlin:"listTest"`
 	Unmapped int      `json:"unmapped" gremlin:"unmapped"`
+	Sort     int      `json:"sort"     gremlin:"sort"`
+}
+
+type testVertexWithNumSlice struct {
+	types.Vertex
+	ListInts []int `json:"listInts" gremlin:"listInts"`
 }
 
 func TestUtils(t *testing.T) {
@@ -103,6 +109,18 @@ func TestUtils(t *testing.T) {
 			v:         testVertexForUtils{},
 			shouldErr: true,
 			testName:  "UnloadGremlinResultIntoStructTestWithoutPointer",
+		},
+		{
+			testName: "UnloadGremlinResultIntoStructTestWithSlice",
+			result: &gremlingo.Result{
+				Data: map[any]any{
+					"id":           "1",
+					"lastModified": 1,
+					"listInts":     []any{1.0, 2.0, 3.0},
+				},
+			},
+			shouldErr: false,
+			v:         &testVertexWithNumSlice{},
 		},
 	}
 

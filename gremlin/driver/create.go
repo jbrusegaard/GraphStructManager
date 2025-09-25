@@ -22,6 +22,7 @@ func Create[T VertexType](db *GremlinDriver, value *T) error {
 		return err
 	}
 	mapValue["lastModified"] = now
+	mapValue["createdAt"] = now
 
 	query := db.g.AddV(structName)
 	for key, value := range mapValue {
@@ -48,5 +49,6 @@ func Create[T VertexType](db *GremlinDriver, value *T) error {
 	}
 	reflect.ValueOf(value).Elem().FieldByName("Id").Set(reflect.ValueOf(id.GetInterface()))
 	reflect.ValueOf(value).Elem().FieldByName("LastModified").SetInt(now)
+	reflect.ValueOf(value).Elem().FieldByName("CreatedAt").SetInt(now)
 	return nil
 }
