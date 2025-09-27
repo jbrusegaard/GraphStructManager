@@ -2,7 +2,6 @@ package driver
 
 import (
 	"testing"
-	"time"
 
 	"app/comparator"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
@@ -203,7 +202,6 @@ func TestQuery(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			time.Sleep(500 * time.Millisecond)
 			model, err := Model[testVertexForUtils](
 				db,
 			).Where("name", comparator.EQ, "fourth").
