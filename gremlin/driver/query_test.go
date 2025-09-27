@@ -2,6 +2,7 @@ package driver
 
 import (
 	"testing"
+	"time"
 
 	"app/comparator"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
@@ -100,64 +101,125 @@ func TestQuery(t *testing.T) {
 			},
 		)
 	}
-	t.Run("TestQueryWhereTraversal", func(t *testing.T) {
-		t.Cleanup(cleanDB)
-		err = seedData(db, seededData)
-		if err != nil {
-			t.Error(err)
-		}
-		model := Model[testVertexForUtils](db).WhereTraversal(gremlingo.T__.Has("name", "second"))
-		result, err := model.First()
-		if err != nil {
-			t.Error(err)
-		}
-		if result.Name != "second" {
-			t.Errorf("Expected second result, got %s", result.Name)
-		}
-	})
+	t.Run(
+		"TestQueryWhereTraversal", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			model := Model[testVertexForUtils](
+				db,
+			).WhereTraversal(gremlingo.T__.Has("name", "second"))
+			result, err := model.First()
+			if err != nil {
+				t.Error(err)
+			}
+			if result.Name != "second" {
+				t.Errorf("Expected second result, got %s", result.Name)
+			}
+		},
+	)
 
-	t.Run("TestDelete", func(t *testing.T) {
-		t.Cleanup(cleanDB)
-		err = seedData(db, seededData)
-		if err != nil {
-			t.Error(err)
-		}
-		err := Model[testVertexForUtils](db).Limit(1).Delete()
-		if err != nil {
-			t.Error(err)
-		}
-		count, err := Model[testVertexForUtils](db).Count()
-		if err != nil {
-			t.Error(err)
-		}
-		if count != len(seededData)-1 {
-			t.Errorf("Expected %d results, got %d", len(seededData)-1, count)
-		}
-	})
+	t.Run(
+		"TestDelete", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			err := Model[testVertexForUtils](db).Limit(1).Delete()
+			if err != nil {
+				t.Error(err)
+			}
+			count, err := Model[testVertexForUtils](db).Count()
+			if err != nil {
+				t.Error(err)
+			}
+			if count != len(seededData)-1 {
+				t.Errorf("Expected %d results, got %d", len(seededData)-1, count)
+			}
+		},
+	)
 
-	t.Run("TestQueryById", func(t *testing.T) {
-		t.Cleanup(cleanDB)
-		err = seedData(db, seededData)
-		if err != nil {
-			t.Error(err)
-		}
-		model, err := Model[testVertexForUtils](db).First()
-		if err != nil {
-			t.Error(err)
-		}
-		result, err := Model[testVertexForUtils](db).Id(model.Id)
-		if err != nil {
-			t.Error(err)
-		}
-		if result.Name != model.Name {
-			t.Errorf("Expected %s result, got %s", model.Name, result.Name)
-		}
-		if result.Id != model.Id {
-			t.Errorf("Expected %s result, got %s", model.Id, result.Id)
-		}
-		if result.Sort != model.Sort {
-			t.Errorf("Expected %b result, got %b", model.Sort, result.Sort)
-		}
-	})
+	t.Run(
+		"TestQueryById", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			model, err := Model[testVertexForUtils](db).First()
+			if err != nil {
+				t.Error(err)
+			}
+			result, err := Model[testVertexForUtils](db).Id(model.Id)
+			if err != nil {
+				t.Error(err)
+			}
+			if result.Name != model.Name {
+				t.Errorf("Expected %s result, got %s", model.Name, result.Name)
+			}
+			if result.Id != model.Id {
+				t.Errorf("Expected %s result, got %s", model.Id, result.Id)
+			}
+			if result.Sort != model.Sort {
+				t.Errorf("Expected %b result, got %b", model.Sort, result.Sort)
+			}
+		},
+	)
 
+	t.Run(
+		"TestQueryUpdateBadInput", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			err = Model[testVertexForUtils](db).Update("badField", "badValue")
+			if err == nil {
+				t.Error("Expected error")
+			}
+		},
+	)
+	t.Run(
+		"TestQueryUpdateSingleCardinality", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			preUpdateModel, err := Model[testVertexForUtils](
+				db,
+			).Where("name", comparator.EQ, "first").
+				First()
+			if err != nil {
+				t.Error(err)
+			}
+			err = Model[testVertexForUtils](
+				db,
+			).Where("name", comparator.EQ, "first").
+				Update("name", "fourth")
+			if err != nil {
+				t.Error(err)
+			}
+			time.Sleep(500 * time.Millisecond)
+			model, err := Model[testVertexForUtils](
+				db,
+			).Where("name", comparator.EQ, "fourth").
+				First()
+			if err != nil {
+				t.Error(err)
+			}
+			if model.Name != "fourth" {
+				t.Errorf("Expected %s result, got %s", "fourth", model.Name)
+			}
+			if preUpdateModel.LastModified.Equal(model.LastModified) {
+				t.Error("Expected last modified time to be updated")
+			}
+			if preUpdateModel.LastModified.Equal(model.LastModified) {
+				t.Error("Expected last modified time to be updated")
+			}
+		},
+	)
 }

@@ -15,7 +15,7 @@ func Create[T VertexType](db *GremlinDriver, value *T) error {
 		return err
 	}
 
-	now := time.Now().Unix()
+	now := time.Now().UTC()
 
 	structName, mapValue, err := structToMap(value)
 	if err != nil {
@@ -48,7 +48,8 @@ func Create[T VertexType](db *GremlinDriver, value *T) error {
 		return err
 	}
 	reflect.ValueOf(value).Elem().FieldByName("Id").Set(reflect.ValueOf(id.GetInterface()))
-	reflect.ValueOf(value).Elem().FieldByName("LastModified").SetInt(now)
-	reflect.ValueOf(value).Elem().FieldByName("CreatedAt").SetInt(now)
+	reflectNow := reflect.ValueOf(now)
+	reflect.ValueOf(value).Elem().FieldByName("LastModified").Set(reflectNow)
+	reflect.ValueOf(value).Elem().FieldByName("CreatedAt").Set(reflectNow)
 	return nil
 }

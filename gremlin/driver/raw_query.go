@@ -58,3 +58,8 @@ func (rq *RawQuery) Next() (*gremlingo.Result, error) {
 	rq.traversal = nil
 	return result, nil
 }
+
+func (rq *RawQuery) Update(propertyName string, value any) error {
+
+	return nil
+}

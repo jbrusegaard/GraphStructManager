@@ -2,6 +2,7 @@ package driver
 
 import (
 	"testing"
+	"time"
 
 	"app/types"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
@@ -48,11 +49,13 @@ func TestUtils(t *testing.T) {
 		"TestUnloadGremlinResultIntoStruct", func(t *testing.T) {
 			t.Parallel()
 			var v testVertexForUtils
+			now := time.Now().UTC()
 			err := unloadGremlinResultIntoStruct(
 				&v, &gremlingo.Result{
 					Data: map[any]any{
 						"id":           "1",
-						"lastModified": 1,
+						"lastModified": now,
+						"createdAt":    now,
 						"name":         "test",
 						"listTest":     []string{"test1", "test2"},
 					},
@@ -64,8 +67,11 @@ func TestUtils(t *testing.T) {
 			if v.Id != "1" {
 				t.Errorf("Vertex ID should be 1, got %s", v.Id)
 			}
-			if v.LastModified != 1 {
-				t.Errorf("Vertex LastModified should be 1, got %d", v.LastModified)
+			if !v.LastModified.Equal(now) {
+				t.Errorf("Vertex LastModified should be %v, got %v", now, v.LastModified)
+			}
+			if !v.CreatedAt.Equal(now) {
+				t.Errorf("Vertex CreatedAt should be %v, got %v", now, v.CreatedAt)
 			}
 			if v.Name != "test" {
 				t.Errorf("Vertex Name should be test, got %s", v.Name)

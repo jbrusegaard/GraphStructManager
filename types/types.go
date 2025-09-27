@@ -1,14 +1,21 @@
 package types
 
+import "time"
+
+const (
+	LastModified = "lastModified"
+	CreatedAt    = "createdAt"
+)
+
 type Vertex struct {
-	Id           any   `json:"id"           gremlin:"id"`
-	LastModified int64 `json:"lastModified" gremlin:"lastModified"`
-	CreatedAt    int64 `json:"createdAt"    gremlin:"createdAt"`
+	Id           any       `json:"id"           gremlin:"id"`
+	LastModified time.Time `json:"lastModified" gremlin:"lastModified"`
+	CreatedAt    time.Time `json:"createdAt"    gremlin:"createdAt"`
 }
 
-func (v Vertex) GetVertexId() any             { return v.Id }
-func (v Vertex) GetVertexLastModified() int64 { return v.LastModified }
-func (v Vertex) GetVertexCreatedAt() int64    { return v.CreatedAt }
+func (v Vertex) GetVertexId() any                 { return v.Id }
+func (v Vertex) GetVertexLastModified() time.Time { return v.LastModified }
+func (v Vertex) GetVertexCreatedAt() time.Time    { return v.CreatedAt }
 
 type Edge struct {
 	Id           any    `json:"id"           gremlin:"id"`

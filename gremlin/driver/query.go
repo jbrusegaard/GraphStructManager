@@ -1,9 +1,16 @@
 package driver
 
 import (
+	"fmt"
+	"reflect"
+	"time"
+
 	"app/comparator"
+	"app/types"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 )
+
+var cardinality = gremlingo.Cardinality
 
 // Query represents a chainable query builder
 type Query[T VertexType] struct {
@@ -158,6 +165,23 @@ func (q *Query[T]) Id(id any) (T, error) {
 	}
 	err = unloadGremlinResultIntoStruct(&v, result)
 	return v, err
+}
+
+func (q *Query[T]) Update(propertyName string, value any) error {
+	// figure out if propertyName is in the struct
+	_, fieldType, err := getStructFieldNameAndType[T](propertyName)
+	if err != nil {
+		return fmt.Errorf("propertyName not found in gremlin struct tags: %s", propertyName)
+	}
+	query := q.buildQuery()
+	query.Property(cardinality.Single, types.LastModified, time.Now().UTC())
+	if fieldType.Kind() == reflect.Slice || fieldType.Kind() == reflect.Map {
+		query = query.Property(gremlingo.Cardinality.Set, propertyName, value)
+	} else {
+		query = query.Property(gremlingo.Cardinality.Single, propertyName, value)
+	}
+	errChan := query.Iterate()
+	return <-errChan
 }
 
 // buildQuery constructs the Gremlin traversal from the query conditions

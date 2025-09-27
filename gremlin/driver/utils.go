@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 
 	"app/types"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
@@ -23,8 +24,8 @@ const (
 
 type VertexType interface {
 	GetVertexId() any
-	GetVertexLastModified() int64
-	GetVertexCreatedAt() int64
+	GetVertexLastModified() time.Time
+	GetVertexCreatedAt() time.Time
 }
 
 // getStructName takes a generic type T, confirms it's a struct, and returns its name
@@ -164,4 +165,16 @@ func validateStructPointerWithAnonymousVertex(value any) error {
 	}
 
 	return fmt.Errorf("struct must contain anonymous types.Vertex field")
+}
+
+func getStructFieldNameAndType[T any](tag string) (string, reflect.Type, error) {
+	var s T
+	rt := reflect.TypeOf(s)
+	for i := range rt.NumField() {
+		field := rt.Field(i)
+		if field.Tag.Get("gremlin") == tag {
+			return field.Name, field.Type, nil
+		}
+	}
+	return "", nil, fmt.Errorf("field not found")
 }

@@ -2,6 +2,7 @@ package types
 
 import (
 	"testing"
+	"time"
 )
 
 func TestTypes(t *testing.T) {
@@ -12,13 +13,20 @@ func TestTypes(t *testing.T) {
 	if vertex.Id != "1" {
 		t.Errorf("Vertex ID should be 1, got %s", vertex.Id)
 	}
-	if vertex.LastModified != 0 {
-		t.Errorf("Vertex LastModified should be 0, got %d", vertex.LastModified)
+
+	if vertex.CreatedAt != (time.Time{}) {
+		t.Errorf("Vertex CreatedAt should be 0, got %v", vertex.CreatedAt)
+	}
+	if vertex.GetVertexCreatedAt() != (time.Time{}) {
+		t.Errorf("Vertex CreatedAt should be 0, got %v", vertex.GetVertexCreatedAt())
 	}
 	if vertex.GetVertexId() != "1" {
 		t.Errorf("Vertex ID should be 1, got %s", vertex.GetVertexId())
 	}
-	if vertex.GetVertexLastModified() != 0 {
-		t.Errorf("Vertex LastModified should be 0, got %d", vertex.GetVertexLastModified())
+	if vertex.GetVertexLastModified() != (time.Time{}) {
+		t.Errorf("Vertex LastModified should be 0, got %v", vertex.GetVertexLastModified())
+	}
+	if vertex.LastModified != (time.Time{}) {
+		t.Errorf("Vertex LastModified should be 0, got %v", vertex.LastModified)
 	}
 }
