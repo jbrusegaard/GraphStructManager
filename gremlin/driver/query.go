@@ -121,8 +121,8 @@ func (q *Query[T]) Find() ([]T, error) {
 	return results, nil
 }
 
-// First executes the query and returns the first result
-func (q *Query[T]) First() (T, error) {
+// Take executes the query and returns the first result
+func (q *Query[T]) Take() (T, error) {
 	var v T
 	query := q.buildQuery()
 	result, err := toMapTraversal(query, true).Next()

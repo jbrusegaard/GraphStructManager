@@ -110,7 +110,7 @@ func TestQuery(t *testing.T) {
 			model := Model[testVertexForUtils](
 				db,
 			).WhereTraversal(gremlingo.T__.Has("name", "second"))
-			result, err := model.First()
+			result, err := model.Take()
 			if err != nil {
 				t.Error(err)
 			}
@@ -148,7 +148,7 @@ func TestQuery(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			model, err := Model[testVertexForUtils](db).First()
+			model, err := Model[testVertexForUtils](db).Take()
 			if err != nil {
 				t.Error(err)
 			}
@@ -191,7 +191,7 @@ func TestQuery(t *testing.T) {
 			preUpdateModel, err := Model[testVertexForUtils](
 				db,
 			).Where("name", comparator.EQ, "first").
-				First()
+				Take()
 			if err != nil {
 				t.Error(err)
 			}
@@ -205,7 +205,7 @@ func TestQuery(t *testing.T) {
 			model, err := Model[testVertexForUtils](
 				db,
 			).Where("name", comparator.EQ, "fourth").
-				First()
+				Take()
 			if err != nil {
 				t.Error(err)
 			}

@@ -38,45 +38,10 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	test2, err := GSM.Model[VertexTesting](db).Where("testString", comparator.EQ, "test").First()
+	test2, err := GSM.Model[VertexTesting](db).Where("testString", comparator.EQ, "test").Take()
 	if err != nil {
 		logger.Fatal(err)
 	}
 	logger.Info(test2)
 
-	// err = GSM.Create(db, &test1)
-	// if err != nil {
-	// 	logger.Fatal(err)
-	// }
-
-	// var test2 TestVertex
-	// // benchmark speed of first
-	// start := time.Now()
-	// test2, err = GSM.First[TestVertex](db, GSM.QueryOpts{Id: test1.Id})
-	// if err != nil {
-	// 	return
-	// }
-	// elapsed := time.Since(start)
-	// logger.Infof("First time: %s", elapsed)
-	// var test3 TestVertex
-
-	// test3, err = GSM.First[TestVertex](
-	// 	db,
-	// 	GSM.QueryOpts{Where: gremlingo.T__.Has("test2", "test2")},
-	// )
-	// if err != nil {
-	// 	return
-	// }
-	// logger.Info(test1)
-	// logger.Info(test2)
-	// logger.Info(test3)
-
-	// allV, err := GSM.Find[TestVertex](db, GSM.QueryOpts{})
-	// if err != nil {
-	// 	return
-	// }
-	// logger.Info("looking through all vertices")
-	// for k, v := range allV {
-	// 	logger.Info(k, v)
-	// }
 }
