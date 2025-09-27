@@ -44,8 +44,8 @@ func (driver *GremlinDriver) Close() {
 	driver.remoteConn.Close()
 }
 
-// Table returns a query builder for a specific label/table
-func (driver *GremlinDriver) Table(label string) *RawQuery {
+// Label returns a query builder for a specific label
+func (driver *GremlinDriver) Label(label string) *RawQuery {
 	return &RawQuery{
 		db:    driver,
 		label: label,

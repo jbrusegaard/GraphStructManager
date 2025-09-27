@@ -33,17 +33,19 @@ func TestDriverConnections(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			db, err := Open(tt.url)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Open() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if db != nil {
-				defer db.Close()
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				t.Parallel()
+				db, err := Open(tt.url)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("Open() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if db != nil {
+					defer db.Close()
+				}
+			},
+		)
 	}
 }
 
@@ -53,7 +55,7 @@ func TestDriverTable(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	table := db.Table("TestVertex")
+	table := db.Label("TestVertex")
 	if table == nil {
 		t.Fatal("Table should not be nil")
 	}
