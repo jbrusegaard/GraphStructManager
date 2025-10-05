@@ -51,6 +51,12 @@ func (driver *GremlinDriver) Label(label string) *RawQuery {
 		label: label,
 	}
 }
+func Save[T VertexType](driver *GremlinDriver, v *T) error {
+	if (*v).GetVertexId() == nil {
+		return Create(driver, v)
+	}
+	return Update(driver, v)
+}
 
 // Package-level generic functions
 

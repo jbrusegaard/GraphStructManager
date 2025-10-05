@@ -220,4 +220,30 @@ func TestQuery(t *testing.T) {
 			}
 		},
 	)
+	t.Run(
+		"TestSave", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			model, err := Model[testVertexForUtils](db).Where("name", comparator.EQ, "first").Take()
+			if err != nil {
+				t.Error(err)
+			}
+			model.Name = "fifth"
+			model.Sort = 5
+			err = Save(db, &model)
+			if err != nil {
+				t.Error(err)
+			}
+			model, err = Model[testVertexForUtils](db).Where("name", comparator.EQ, "fifth").Take()
+			if err != nil {
+				t.Error(err)
+			}
+			if model.Name != "fifth" {
+				t.Errorf("Expected %s result, got %s", "fifth", model.Name)
+			}
+		},
+	)
 }

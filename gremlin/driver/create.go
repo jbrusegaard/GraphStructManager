@@ -8,46 +8,45 @@ import (
 )
 
 func Create[T VertexType](db *GremlinDriver, value *T) error {
-	// Validate it's a struct pointer with anonymous Vertex
+	return createOrUpdate(db, value)
+}
+
+func Update[T VertexType](db *GremlinDriver, value *T) error {
+	return createOrUpdate(db, value)
+}
+
+func createOrUpdate[T VertexType](db *GremlinDriver, value *T) error {
 	err := validateStructPointerWithAnonymousVertex(value)
 	if err != nil {
 		db.logger.Errorf("Validation failed: %v", err)
 		return err
 	}
-
 	now := time.Now().UTC()
-
 	structName, mapValue, err := structToMap(value)
 	if err != nil {
 		return err
 	}
+	id := mapValue["id"]
+	delete(mapValue, "id")
 	mapValue["lastModified"] = now
-	mapValue["createdAt"] = now
-
-	query := db.g.AddV(structName)
-	for key, value := range mapValue {
-		rv := reflect.ValueOf(value)
-		switch rv.Kind() {
-		case reflect.Slice:
-			sliceLen := rv.Len()
-			for i := range sliceLen {
-				query.Property(gremlingo.Cardinality.Set, key, rv.Index(i).Interface())
-			}
-		case reflect.Map:
-			if mapVal, ok := rv.Interface().(map[string]any); ok {
-				for k := range mapVal {
-					query.Property(gremlingo.Cardinality.Set, key, k)
-				}
-			}
-		default:
-			query.Property(gremlingo.Cardinality.Single, key, value)
+	var query *gremlingo.GraphTraversal
+	newMap := make(map[any]any, len(mapValue))
+	if id == nil {
+		mapValue["createdAt"] = now
+		for k, v := range mapValue {
+			newMap[k] = v
 		}
+		newMap[gremlingo.T.Label] = structName
+		query = db.g.MergeV(newMap)
+	} else {
+		query = db.g.MergeV(map[any]any{gremlingo.T.Id: id})
 	}
-	id, err := query.Id().Next()
+	query.Option(gremlingo.Merge.OnMatch, mapValue)
+	vertexId, err := query.Id().Next()
 	if err != nil {
 		return err
 	}
-	reflect.ValueOf(value).Elem().FieldByName("Id").Set(reflect.ValueOf(id.GetInterface()))
+	reflect.ValueOf(value).Elem().FieldByName("Id").Set(reflect.ValueOf(vertexId.GetInterface()))
 	reflectNow := reflect.ValueOf(now)
 	reflect.ValueOf(value).Elem().FieldByName("LastModified").Set(reflectNow)
 	reflect.ValueOf(value).Elem().FieldByName("CreatedAt").Set(reflectNow)

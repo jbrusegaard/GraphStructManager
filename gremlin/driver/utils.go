@@ -3,6 +3,7 @@ package driver
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"reflect"
 	"time"
 
@@ -93,8 +94,8 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 	}
 }
 
-func structToMap(value any) (string, map[any]any, error) {
-	mapValue := make(map[any]any)
+func structToMap(value any) (string, map[string]any, error) {
+	mapValue := make(map[string]any)
 
 	// Get the reflection value
 	rv := reflect.ValueOf(value)
@@ -115,6 +116,20 @@ func structToMap(value any) (string, map[any]any, error) {
 	for i := range rv.NumField() {
 		field := rt.Field(i)
 		fieldValue := rv.Field(i)
+
+		if field.Anonymous && fieldValue.Kind() == reflect.Struct {
+			// Recursively process the anonymous struct
+			_, anonymousMap, err := structToMap(fieldValue.Interface())
+			if err != nil {
+				return "", nil, fmt.Errorf(
+					"error processing anonymous field %s: %w",
+					field.Name,
+					err,
+				)
+			}
+			maps.Copy(mapValue, anonymousMap)
+			continue
+		}
 
 		// Get the gremlin tag
 		gremlinTag := field.Tag.Get("gremlin")
