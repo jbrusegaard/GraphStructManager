@@ -20,6 +20,9 @@ type QueryOpts struct {
 	Where *gremlingo.GraphTraversal
 }
 
+/*
+g This is a godoc comment
+*/
 func g(remoteConnection *gremlingo.DriverRemoteConnection) *gremlingo.GraphTraversalSource {
 	return gremlingo.Traversal_().WithRemote(remoteConnection)
 }
