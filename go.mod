@@ -1,4 +1,4 @@
-module app
+module github.com/jbrusegaard/graph-struct-manager
 
 go 1.25
 

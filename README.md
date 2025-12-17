@@ -49,8 +49,8 @@ Import the necessary packages and connect to your Gremlin database:
 
 ```go
 import (
-    "app/gremlin/driver"
-    "app/comparator"
+    "github.com/jbrusegaard/graph-struct-manager/gremlin/driver"
+    "github.com/jbrusegaard/graph-struct-manager/comparator"
     // ... other imports
 )
 

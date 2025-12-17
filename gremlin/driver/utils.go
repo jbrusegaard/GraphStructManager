@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"time"
 
-	"app/types"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"github.com/jbrusegaard/graph-struct-manager/types"
 )
 
 var __ = gremlingo.T__

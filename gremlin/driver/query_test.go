@@ -3,8 +3,8 @@ package driver
 import (
 	"testing"
 
-	"app/comparator"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"github.com/jbrusegaard/graph-struct-manager/comparator"
 )
 
 func seedData(db *GremlinDriver, data []testVertexForUtils) error {

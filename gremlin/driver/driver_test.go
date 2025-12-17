@@ -3,8 +3,8 @@ package driver
 import (
 	"testing"
 
-	"app/comparator"
-	"app/types"
+	"github.com/jbrusegaard/graph-struct-manager/comparator"
+	"github.com/jbrusegaard/graph-struct-manager/types"
 )
 
 type testVertex struct {

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"app/comparator"
-	GSM "app/gremlin/driver"
-	"app/log"
-	"app/types"
+	"github.com/jbrusegaard/graph-struct-manager/comparator"
+	GSM "github.com/jbrusegaard/graph-struct-manager/gremlin/driver"
+	"github.com/jbrusegaard/graph-struct-manager/log"
+	"github.com/jbrusegaard/graph-struct-manager/types"
 )
 
 type VertexTesting struct {

@@ -3,10 +3,10 @@ package driver
 import (
 	"fmt"
 
-	"app/comparator"
-	appLogger "app/log"
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 	"github.com/charmbracelet/log"
+	"github.com/jbrusegaard/graph-struct-manager/comparator"
+	appLogger "github.com/jbrusegaard/graph-struct-manager/log"
 )
 
 type GremlinDriver struct {
