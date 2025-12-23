@@ -156,8 +156,8 @@ func TestUtils(t *testing.T) {
 			if err != nil {
 				t.Errorf("Error getting struct name: %v", err)
 			}
-			if name != "testVertexForUtils" {
-				t.Errorf("Struct name should be testVertexForUtils, got %s", name)
+			if name != "test_vertex_for_utils" {
+				t.Errorf("Struct name should be test_vertex_for_utils, got %s", name)
 			}
 			if mapValue["name"] != "test" {
 				t.Errorf("Struct name should be test, got %s", mapValue["name"])
@@ -174,8 +174,8 @@ func TestUtils(t *testing.T) {
 			if err != nil {
 				t.Errorf("Error getting struct name: %v", err)
 			}
-			if name != "testVertexForUtils" {
-				t.Errorf("Struct name should be testVertexForUtils, got %s", name)
+			if name != "test_vertex_for_utils" {
+				t.Errorf("Struct name should be test_vertex_for_utils, got %s", name)
 			}
 			if mapValue["name"] != "test" {
 				t.Errorf("Struct name should be test, got %s", mapValue["name"])

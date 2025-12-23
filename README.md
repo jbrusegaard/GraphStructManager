@@ -33,8 +33,8 @@ The query builder uses Go generics to provide type-safe operations on vertex typ
 
 ## Setup
 
-First, define your vertex struct with the required gremlin tags:
-
+First, define your vertex struct with the required gremlin tags shown below. Please note the vertex label will be your struct name in lower snake case. So for this example the created vertex label would be `test_vertex`.
+The GSM expects that types.Vertex will be set as an anonymous struct on the struct in which you are creating a vertex.
 ```go
 type TestVertex struct {
     types.Vertex                               // Anonymous embedding required

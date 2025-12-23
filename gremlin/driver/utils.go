@@ -8,6 +8,7 @@ import (
 	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"github.com/gobeam/stringy"
 	"github.com/jbrusegaard/graph-struct-manager/types"
 )
 
@@ -94,6 +95,10 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 	}
 }
 
+// structToMap converts a struct to a map[string]any and returns the label and the map
+// the label is the name of the struct converted to snake case
+// the map is the map of the struct
+// the error is the error if any
 func structToMap(value any) (string, map[string]any, error) {
 	mapValue := make(map[string]any)
 
@@ -146,7 +151,7 @@ func structToMap(value any) (string, map[string]any, error) {
 		mapValue[gremlinTag] = fieldInterface
 	}
 
-	return rv.Type().Name(), mapValue, nil
+	return stringy.New(rv.Type().Name()).SnakeCase().ToLower(), mapValue, nil
 }
 
 func validateStructPointerWithAnonymousVertex(value any) error {
