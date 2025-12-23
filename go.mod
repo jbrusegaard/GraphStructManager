@@ -6,6 +6,7 @@ require (
 	github.com/apache/tinkerpop/gremlin-go/v3 v3.7.4
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/log v0.4.2
+	github.com/gobeam/stringy v0.0.7
 )
 
 require (

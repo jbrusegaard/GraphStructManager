@@ -55,12 +55,12 @@ func TestDriverTable(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	table := db.Label("TestVertex")
+	table := db.Label("test_vertex")
 	if table == nil {
 		t.Fatal("Table should not be nil")
 	}
-	if table.label != "TestVertex" {
-		t.Errorf("Table label should be TestVertex, got %s", table.label)
+	if table.label != "test_vertex" {
+		t.Errorf("Table label should be test_vertex, got %s", table.label)
 	}
 }
 

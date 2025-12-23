@@ -22,7 +22,7 @@ func createOrUpdate[T VertexType](db *GremlinDriver, value *T) error {
 		return err
 	}
 	now := time.Now().UTC()
-	structName, mapValue, err := structToMap(value)
+	label, mapValue, err := structToMap(value)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func createOrUpdate[T VertexType](db *GremlinDriver, value *T) error {
 		for k, v := range mapValue {
 			newMap[k] = v
 		}
-		newMap[gremlingo.T.Label] = structName
+		newMap[gremlingo.T.Label] = label
 		query = db.g.MergeV(newMap)
 	} else {
 		query = db.g.MergeV(map[any]any{gremlingo.T.Id: id})

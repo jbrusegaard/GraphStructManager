@@ -6,6 +6,7 @@ import (
 	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"github.com/gobeam/stringy"
 	"github.com/jbrusegaard/graph-struct-manager/comparator"
 	"github.com/jbrusegaard/graph-struct-manager/types"
 )
@@ -36,11 +37,12 @@ type OrderCondition struct {
 
 // NewQuery creates a new query builder for type T
 func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
-	label, _ := getStructName[T]()
+	structName, _ := getStructName[T]()
+	label := stringy.New(structName)
 	return &Query[T]{
 		db:         db,
 		conditions: make([]QueryCondition, 0),
-		label:      label,
+		label:      label.SnakeCase().ToLower(),
 		orderBy:    nil,
 	}
 }
