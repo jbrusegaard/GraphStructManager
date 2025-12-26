@@ -42,11 +42,11 @@ func createOrUpdate[T VertexType](db *GremlinDriver, value *T) error {
 		query = db.g.MergeV(map[any]any{gremlingo.T.Id: id})
 	}
 	query.Option(gremlingo.Merge.OnMatch, mapValue)
-	vertexId, err := query.Id().Next()
+	vertexID, err := query.Id().Next()
 	if err != nil {
 		return err
 	}
-	reflect.ValueOf(value).Elem().FieldByName("Id").Set(reflect.ValueOf(vertexId.GetInterface()))
+	reflect.ValueOf(value).Elem().FieldByName("ID").Set(reflect.ValueOf(vertexID.GetInterface()))
 	reflectNow := reflect.ValueOf(now)
 	reflect.ValueOf(value).Elem().FieldByName("LastModified").Set(reflectNow)
 	reflect.ValueOf(value).Elem().FieldByName("CreatedAt").Set(reflectNow)

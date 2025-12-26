@@ -1,4 +1,4 @@
-package types
+package gsmtypes
 
 import (
 	"testing"
@@ -8,10 +8,10 @@ import (
 func TestTypes(t *testing.T) {
 	t.Parallel()
 	vertex := Vertex{
-		Id: "1",
+		ID: "1",
 	}
-	if vertex.Id != "1" {
-		t.Errorf("Vertex ID should be 1, got %s", vertex.Id)
+	if vertex.ID != "1" {
+		t.Errorf("Vertex ID should be 1, got %s", vertex.ID)
 	}
 
 	if vertex.CreatedAt != (time.Time{}) {
@@ -20,8 +20,8 @@ func TestTypes(t *testing.T) {
 	if vertex.GetVertexCreatedAt() != (time.Time{}) {
 		t.Errorf("Vertex CreatedAt should be 0, got %v", vertex.GetVertexCreatedAt())
 	}
-	if vertex.GetVertexId() != "1" {
-		t.Errorf("Vertex ID should be 1, got %s", vertex.GetVertexId())
+	if vertex.GetVertexID() != "1" {
+		t.Errorf("Vertex ID should be 1, got %s", vertex.GetVertexID())
 	}
 	if vertex.GetVertexLastModified() != (time.Time{}) {
 		t.Errorf("Vertex LastModified should be 0, got %v", vertex.GetVertexLastModified())

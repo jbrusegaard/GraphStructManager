@@ -59,7 +59,6 @@ func (rq *RawQuery) Next() (*gremlingo.Result, error) {
 	return result, nil
 }
 
-func (rq *RawQuery) Update(propertyName string, value any) error {
-
-	return nil
-}
+// func (rq *RawQuery) Update(propertyName string, value any) error {
+// 	return nil
+// }

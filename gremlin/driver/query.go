@@ -8,7 +8,7 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 	"github.com/gobeam/stringy"
 	"github.com/jbrusegaard/graph-struct-manager/comparator"
-	"github.com/jbrusegaard/graph-struct-manager/types"
+	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
 
 var cardinality = gremlingo.Cardinality
@@ -157,8 +157,8 @@ func (q *Query[T]) Delete() error {
 	return <-err
 }
 
-// Id finds vertex by id in a more optimized way than using where
-func (q *Query[T]) Id(id any) (T, error) {
+// ID finds vertex by id in a more optimized way than using where
+func (q *Query[T]) ID(id any) (T, error) {
 	var v T
 	query := q.db.g.V(id)
 	result, err := toMapTraversal(query, true).Next()
@@ -176,7 +176,7 @@ func (q *Query[T]) Update(propertyName string, value any) error {
 		return fmt.Errorf("propertyName not found in gremlin struct tags: %s", propertyName)
 	}
 	query := q.buildQuery()
-	query.Property(cardinality.Single, types.LastModified, time.Now().UTC())
+	query.Property(cardinality.Single, gsmtypes.LastModified, time.Now().UTC())
 	if fieldType.Kind() == reflect.Slice || fieldType.Kind() == reflect.Map {
 		query = query.Property(gremlingo.Cardinality.Set, propertyName, value)
 	} else {
@@ -190,6 +190,30 @@ func (q *Query[T]) Update(propertyName string, value any) error {
 func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 	query := q.db.g.V().HasLabel(q.label)
 
+	q.addQueryConditions(query)
+
+	if q.orderBy != nil {
+		if q.orderBy.desc {
+			query.Order().By(q.orderBy.field, Order.Desc)
+		} else {
+			query.Order().By(q.orderBy.field, Order.Asc)
+		}
+	}
+
+	// Apply offset
+	if q.offset != nil {
+		query = query.Skip(*q.offset)
+	}
+
+	// Apply limit
+	if q.limit != nil {
+		query = query.Limit(*q.limit)
+	}
+
+	return query
+}
+
+func (q *Query[T]) addQueryConditions(query *gremlingo.GraphTraversal) {
 	// Apply conditions
 	for _, condition := range q.conditions {
 		if condition.traversal != nil {
@@ -227,34 +251,14 @@ func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 			}
 		}
 	}
-
-	if q.orderBy != nil {
-		if q.orderBy.desc {
-			query.Order().By(q.orderBy.field, Order.Desc)
-		} else {
-			query.Order().By(q.orderBy.field, Order.Asc)
-		}
-	}
-
-	// Apply offset
-	if q.offset != nil {
-		query = query.Skip(*q.offset)
-	}
-
-	// Apply limit
-	if q.limit != nil {
-		query = query.Limit(*q.limit)
-	}
-
-	return query
 }
 
 func toMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.GraphTraversal {
 	return query.ValueMap(args...).By(
-		__.Choose(
-			__.Count(Scope.Local).Is(P.Eq(1)),
-			__.Unfold(),
-			__.Identity(),
+		anonymousTraversal.Choose(
+			anonymousTraversal.Count(Scope.Local).Is(P.Eq(1)),
+			anonymousTraversal.Unfold(),
+			anonymousTraversal.Identity(),
 		),
 	)
 }
