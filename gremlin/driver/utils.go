@@ -30,6 +30,14 @@ type VertexType interface {
 	GetVertexID() any
 	GetVertexLastModified() time.Time
 	GetVertexCreatedAt() time.Time
+	Label() string
+}
+
+type EdgeType interface {
+	GetEdgeID() any
+	GetEdgeLastModified() string
+	GetEdgeCreatedAt() int64
+	Label() string
 }
 
 // getStructName takes a generic type T, confirms it's a struct, and returns its name
@@ -102,8 +110,89 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 	}
 }
 
+// getLabelFromValue gets the label from a value, using the Label() method if it returns a non-empty string,
+// otherwise falling back to struct name normalization
+// Supports both pointer and value receivers for the Label() method
+func getLabelFromValue( //nolint:gocognit // this is a complex function but it's necessary to support both pointer and value receivers
+	value any,
+) (string, error) {
+	rv := reflect.ValueOf(value)
+	originalRv := rv
+
+	// Get the underlying struct type
+	if rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return "", errors.New("value is a nil pointer")
+		}
+		rv = rv.Elem()
+	}
+	if rv.Kind() != reflect.Struct {
+		return "", errors.New("value is not a struct")
+	}
+	rt := rv.Type()
+
+	// Try to call Label() method using reflection to support both pointer and value receivers
+	var labelMethod reflect.Value
+
+	// First, try on the original value (which might be a pointer)
+	if originalRv.Kind() == reflect.Ptr {
+		labelMethod = originalRv.MethodByName("Label")
+	}
+
+	// If not found on pointer, try on the value itself (for value receivers)
+	if !labelMethod.IsValid() {
+		labelMethod = rv.MethodByName("Label")
+	}
+
+	// If still not found and we have a value (not pointer), try getting a pointer to it
+	// This handles the case where Label() has a pointer receiver but we received a value
+	if !labelMethod.IsValid() && originalRv.Kind() != reflect.Ptr {
+		// Check if the value is addressable (can take its address)
+		if rv.CanAddr() {
+			labelMethod = rv.Addr().MethodByName("Label")
+		} else {
+			// If not addressable, create a new pointer with the value copied
+			ptrRv := reflect.New(rt)
+			ptrRv.Elem().Set(rv)
+			labelMethod = ptrRv.MethodByName("Label")
+		}
+	}
+
+	if labelMethod.IsValid() {
+		// Call the Label() method
+		results := labelMethod.Call(nil)
+		if len(results) > 0 {
+			label := results[0].String()
+			// If Label() returns empty string, use struct name normalization
+			if label == "" {
+				return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
+			}
+			return label, nil
+		}
+	}
+
+	// Fallback: try interface assertion (for value receivers)
+	if vertexType, ok := value.(VertexType); ok {
+		label := vertexType.Label()
+		if label == "" {
+			return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
+		}
+		return label, nil
+	}
+	if edgeType, ok := value.(EdgeType); ok {
+		label := edgeType.Label()
+		if label == "" {
+			return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
+		}
+		return label, nil
+	}
+
+	// Fallback to struct name normalization
+	return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
+}
+
 // structToMap converts a struct to a map[string]any and returns the label and the map
-// the label is the name of the struct converted to snake case
+// the label is determined by calling Label() method if available, otherwise the name of the struct converted to snake case
 // the map is the map of the struct
 // the error is the error if any
 func structToMap(value any) (string, map[string]any, error) {
@@ -121,6 +210,12 @@ func structToMap(value any) (string, map[string]any, error) {
 		return "", nil, errors.New("value is not a struct")
 	}
 
+	// Get the label using the helper function
+	label, err := getLabelFromValue(value)
+	if err != nil {
+		return "", nil, err
+	}
+
 	// Get the type information
 	rt := rv.Type()
 
@@ -131,8 +226,8 @@ func structToMap(value any) (string, map[string]any, error) {
 
 		if field.Anonymous && fieldValue.Kind() == reflect.Struct {
 			// Recursively process the anonymous struct
-			_, anonymousMap, err := structToMap(fieldValue.Interface())
-			if err != nil {
+			_, anonymousMap, structMapErr := structToMap(fieldValue.Interface())
+			if structMapErr != nil {
 				return "", nil, fmt.Errorf(
 					"error processing anonymous field %s: %w",
 					field.Name,
@@ -158,7 +253,7 @@ func structToMap(value any) (string, map[string]any, error) {
 		mapValue[gremlinTag] = fieldInterface
 	}
 
-	return stringy.New(rv.Type().Name()).SnakeCase().ToLower(), mapValue, nil
+	return label, mapValue, nil
 }
 
 func validateStructPointerWithAnonymousVertex(value any) error {
