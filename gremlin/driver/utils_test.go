@@ -53,11 +53,11 @@ func TestUtils(t *testing.T) {
 			err := unloadGremlinResultIntoStruct(
 				&v, &gremlingo.Result{
 					Data: map[any]any{
-						"id":           "1",
-						"lastModified": now,
-						"createdAt":    now,
-						"name":         "test",
-						"listTest":     []string{"test1", "test2"},
+						"id":            "1",
+						"last_modified": now,
+						"created_at":    now,
+						"name":          "test",
+						"listTest":      []string{"test1", "test2"},
 					},
 				},
 			)

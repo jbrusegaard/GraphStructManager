@@ -5,6 +5,7 @@ import (
 	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
 
 func Create[T VertexType](db *GremlinDriver, value *T) error {
@@ -28,11 +29,11 @@ func createOrUpdate[T VertexType](db *GremlinDriver, value *T) error {
 	}
 	id := mapValue["id"]
 	delete(mapValue, "id")
-	mapValue["lastModified"] = now
+	mapValue[gsmtypes.LastModified] = now
 	var query *gremlingo.GraphTraversal
 	newMap := make(map[any]any, len(mapValue))
 	if id == nil {
-		mapValue["createdAt"] = now
+		mapValue[gsmtypes.CreatedAt] = now
 		for k, v := range mapValue {
 			newMap[k] = v
 		}

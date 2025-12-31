@@ -3,14 +3,14 @@ package gsmtypes
 import "time"
 
 const (
-	LastModified = "lastModified"
-	CreatedAt    = "createdAt"
+	LastModified = "last_modified"
+	CreatedAt    = "created_at"
 )
 
 type Vertex struct {
-	ID           any       `json:"id"           gremlin:"id"`
-	LastModified time.Time `json:"lastModified" gremlin:"lastModified"`
-	CreatedAt    time.Time `json:"createdAt"    gremlin:"createdAt"`
+	ID           any       `json:"id"            gremlin:"id"`
+	LastModified time.Time `json:"last_modified" gremlin:"last_modified"`
+	CreatedAt    time.Time `json:"created_at"    gremlin:"created_at"`
 }
 
 func (v Vertex) GetVertexID() any                 { return v.ID }
@@ -18,9 +18,9 @@ func (v Vertex) GetVertexLastModified() time.Time { return v.LastModified }
 func (v Vertex) GetVertexCreatedAt() time.Time    { return v.CreatedAt }
 
 type Edge struct {
-	ID           any    `json:"id"           gremlin:"id"`
-	LastModified string `json:"lastModified" gremlin:"lastModified"`
-	CreatedAt    int64  `json:"createdAt"    gremlin:"createdAt"`
+	ID           any    `json:"id"            gremlin:"id"`
+	LastModified string `json:"last_modified" gremlin:"last_modified"`
+	CreatedAt    int64  `json:"created_at"    gremlin:"created_at"`
 }
 
 func (e Edge) GetEdgeID() any              { return e.ID }
