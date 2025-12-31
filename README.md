@@ -6,6 +6,7 @@ A type-safe, chainable query builder for Gremlin graph databases in Go. This ORM
 
 - [Overview](#overview)
 - [Setup](#setup)
+  - [Custom Labels](#custom-labels)
 - [Environment Variables](#environment-variables)
 - [Query Builder Functions](#query-builder-functions)
   - [NewQuery](#newquery)
@@ -34,7 +35,7 @@ The query builder uses Go generics to provide type-safe operations on vertex typ
 
 ## Setup
 
-First, define your vertex struct with the required gremlin tags shown below. Please note the vertex label will be your struct name in lower snake case. So for this example the created vertex label would be `test_vertex`.
+First, define your vertex struct with the required gremlin tags shown below. By default, the vertex label will be your struct name converted to lower snake case. So for this example the created vertex label would be `test_vertex`.
 The GSM expects that types.Vertex will be set as an anonymous struct on the struct in which you are creating a vertex.
 ```go
 type TestVertex struct {
@@ -45,6 +46,38 @@ type TestVertex struct {
     Tags        []string `gremlin:"tags"`
 }
 ```
+
+### Custom Labels
+
+You can provide a custom label for your vertex by implementing the `Label()` method on your struct. This is useful when you need a specific label that differs from the normalized struct name, or when you want more control over the label format.
+
+**Example with custom label:**
+```go
+type User struct {
+    types.Vertex
+    Name  string `gremlin:"name"`
+    Email string `gremlin:"email"`
+}
+
+// Custom label implementation - supports both value and pointer receivers
+func (u User) Label() string {
+    return "custom_user_label"
+}
+
+// Or with pointer receiver:
+// func (u *User) Label() string {
+//     return "custom_user_label"
+// }
+```
+
+**When to use custom labels:**
+- When you need a specific label format that doesn't match the struct name pattern
+- When migrating from existing graph databases with established label conventions
+- When you want shorter or more descriptive labels than the auto-generated ones
+- When working with multiple structs that should share the same label
+
+**Default behavior:**
+If you don't implement `Label()`, or if `Label()` returns an empty string, the system will automatically use the struct name normalized to snake_case (e.g., `MyCustomVertex` → `my_custom_vertex`). This ensures backward compatibility with existing code.
 
 Import the necessary packages and connect to your Gremlin database:
 
