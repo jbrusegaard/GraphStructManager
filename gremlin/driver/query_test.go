@@ -18,12 +18,12 @@ func seedData(db *GremlinDriver, data []testVertexForUtils) error {
 }
 
 func cleanDB() {
-	db, _ := Open(DbUrl)
+	db, _ := Open(DbURL)
 	<-db.g.V().Drop().Iterate()
 }
 
 func TestQuery(t *testing.T) {
-	db, err := Open(DbUrl)
+	db, err := Open(DbURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,15 +152,15 @@ func TestQuery(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			result, err := Model[testVertexForUtils](db).Id(model.Id)
+			result, err := Model[testVertexForUtils](db).ID(model.ID)
 			if err != nil {
 				t.Error(err)
 			}
 			if result.Name != model.Name {
 				t.Errorf("Expected %s result, got %s", model.Name, result.Name)
 			}
-			if result.Id != model.Id {
-				t.Errorf("Expected %s result, got %s", model.Id, result.Id)
+			if result.ID != model.ID {
+				t.Errorf("Expected %s result, got %s", model.ID, result.ID)
 			}
 			if result.Sort != model.Sort {
 				t.Errorf("Expected %b result, got %b", model.Sort, result.Sort)

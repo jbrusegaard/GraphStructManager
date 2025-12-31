@@ -16,7 +16,7 @@ type GremlinDriver struct {
 }
 
 type QueryOpts struct {
-	Id    any
+	ID    any
 	Where *gremlingo.GraphTraversal
 }
 
@@ -54,8 +54,9 @@ func (driver *GremlinDriver) Label(label string) *RawQuery {
 		label: label,
 	}
 }
+
 func Save[T VertexType](driver *GremlinDriver, v *T) error {
-	if (*v).GetVertexId() == nil {
+	if (*v).GetVertexID() == nil {
 		return Create(driver, v)
 	}
 	return Update(driver, v)

@@ -4,17 +4,18 @@ import (
 	"testing"
 
 	"github.com/jbrusegaard/graph-struct-manager/comparator"
-	"github.com/jbrusegaard/graph-struct-manager/types"
+	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
 
 type testVertex struct {
-	types.Vertex
+	gsmtypes.Vertex
 	Name string `json:"name" gremlin:"name"`
 }
 
-const DbUrl = "ws://localhost:8182"
+const DbURL = "ws://localhost:8182"
 
 func TestDriverConnections(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		url     string
@@ -22,7 +23,7 @@ func TestDriverConnections(t *testing.T) {
 	}{
 		{
 			name:    "ValidConnection",
-			url:     DbUrl,
+			url:     DbURL,
 			wantErr: false,
 		},
 		{
@@ -50,7 +51,7 @@ func TestDriverConnections(t *testing.T) {
 }
 
 func TestDriverTable(t *testing.T) {
-	db, err := Open(DbUrl)
+	db, err := Open(DbURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestDriverTable(t *testing.T) {
 }
 
 func TestDriverModel(t *testing.T) {
-	db, err := Open(DbUrl)
+	db, err := Open(DbURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +78,7 @@ func TestDriverModel(t *testing.T) {
 }
 
 func TestDriverWhere(t *testing.T) {
-	db, err := Open(DbUrl)
+	db, err := Open(DbURL)
 	if err != nil {
 		t.Fatal(err)
 	}

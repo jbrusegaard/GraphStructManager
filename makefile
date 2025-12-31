@@ -12,7 +12,8 @@ first-setup:
 
 .PHONY: go-lint
 go-lint:
-	golangci-lint run --fix --allow-parallel-runners
+	golangci-lint fmt ./...
+	golangci-lint run --fix --allow-parallel-runners ./...
 
 .PHONY: test-cov
 test-cov:

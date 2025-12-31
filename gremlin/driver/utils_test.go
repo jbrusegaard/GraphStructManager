@@ -5,11 +5,11 @@ import (
 	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
-	"github.com/jbrusegaard/graph-struct-manager/types"
+	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
 
 type testVertexForUtils struct {
-	types.Vertex
+	gsmtypes.Vertex
 	Name     string   `json:"name"     gremlin:"name"`
 	Ignore   string   `json:"-"        gremlin:"-"`
 	ListTest []string `json:"listTest" gremlin:"listTest"`
@@ -18,7 +18,7 @@ type testVertexForUtils struct {
 }
 
 type testVertexWithNumSlice struct {
-	types.Vertex
+	gsmtypes.Vertex
 	ListInts []int `json:"listInts" gremlin:"listInts"`
 }
 
@@ -53,19 +53,19 @@ func TestUtils(t *testing.T) {
 			err := unloadGremlinResultIntoStruct(
 				&v, &gremlingo.Result{
 					Data: map[any]any{
-						"id":           "1",
-						"lastModified": now,
-						"createdAt":    now,
-						"name":         "test",
-						"listTest":     []string{"test1", "test2"},
+						"id":            "1",
+						"last_modified": now,
+						"created_at":    now,
+						"name":          "test",
+						"listTest":      []string{"test1", "test2"},
 					},
 				},
 			)
 			if err != nil {
 				t.Errorf("Error unloading gremlin result into struct: %v", err)
 			}
-			if v.Id != "1" {
-				t.Errorf("Vertex ID should be 1, got %s", v.Id)
+			if v.ID != "1" {
+				t.Errorf("Vertex ID should be 1, got %s", v.ID)
 			}
 			if !v.LastModified.Equal(now) {
 				t.Errorf("Vertex LastModified should be %v, got %v", now, v.LastModified)
@@ -219,5 +219,4 @@ func TestUtils(t *testing.T) {
 			},
 		)
 	}
-
 }

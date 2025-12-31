@@ -5,6 +5,7 @@ import (
 	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
 
 func Create[T VertexType](db *GremlinDriver, value *T) error {
@@ -28,11 +29,11 @@ func createOrUpdate[T VertexType](db *GremlinDriver, value *T) error {
 	}
 	id := mapValue["id"]
 	delete(mapValue, "id")
-	mapValue["lastModified"] = now
+	mapValue[gsmtypes.LastModified] = now
 	var query *gremlingo.GraphTraversal
 	newMap := make(map[any]any, len(mapValue))
 	if id == nil {
-		mapValue["createdAt"] = now
+		mapValue[gsmtypes.CreatedAt] = now
 		for k, v := range mapValue {
 			newMap[k] = v
 		}
@@ -42,11 +43,11 @@ func createOrUpdate[T VertexType](db *GremlinDriver, value *T) error {
 		query = db.g.MergeV(map[any]any{gremlingo.T.Id: id})
 	}
 	query.Option(gremlingo.Merge.OnMatch, mapValue)
-	vertexId, err := query.Id().Next()
+	vertexID, err := query.Id().Next()
 	if err != nil {
 		return err
 	}
-	reflect.ValueOf(value).Elem().FieldByName("Id").Set(reflect.ValueOf(vertexId.GetInterface()))
+	reflect.ValueOf(value).Elem().FieldByName("ID").Set(reflect.ValueOf(vertexID.GetInterface()))
 	reflectNow := reflect.ValueOf(now)
 	reflect.ValueOf(value).Elem().FieldByName("LastModified").Set(reflectNow)
 	reflect.ValueOf(value).Elem().FieldByName("CreatedAt").Set(reflectNow)

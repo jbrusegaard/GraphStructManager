@@ -16,7 +16,21 @@ func InitializeLogger() *log.Logger {
 	styles.Values["role"] = lipgloss.NewStyle().Bold(true)
 
 	logger := log.New(os.Stdout)
-	logger.SetLevel(log.InfoLevel) // Set default log level
+	logLevel := os.Getenv("GSM_LOG_LEVEL")
+	switch logLevel {
+	case "debug":
+		logger.SetLevel(log.DebugLevel)
+	case "info":
+		logger.SetLevel(log.InfoLevel)
+	case "warn":
+		logger.SetLevel(log.WarnLevel)
+	case "error":
+		logger.SetLevel(log.ErrorLevel)
+	case "fatal":
+		logger.SetLevel(log.FatalLevel)
+	default:
+		logger.SetLevel(log.InfoLevel)
+	}
 	logger.SetTimeFormat("2006-01-02 15:04:05")
 
 	logger.SetStyles(styles)

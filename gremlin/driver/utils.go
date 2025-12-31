@@ -9,13 +9,15 @@ import (
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 	"github.com/gobeam/stringy"
-	"github.com/jbrusegaard/graph-struct-manager/types"
+	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
 
-var __ = gremlingo.T__
-var P = gremlingo.P
-var Order = gremlingo.Order
-var Scope = gremlingo.Scope
+var (
+	anonymousTraversal = gremlingo.T__
+	P                  = gremlingo.P
+	Order              = gremlingo.Order
+	Scope              = gremlingo.Scope
+)
 
 type GremlinOrder int
 
@@ -25,7 +27,7 @@ const (
 )
 
 type VertexType interface {
-	GetVertexId() any
+	GetVertexID() any
 	GetVertexLastModified() time.Time
 	GetVertexCreatedAt() time.Time
 }
@@ -49,7 +51,11 @@ func unloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {
 	// make string map
 	stringMap := make(map[string]any)
 	for key, value := range mapResult {
-		stringMap[key.(string)] = value
+		keyStr, keyOk := key.(string)
+		if !keyOk {
+			return errors.New("gremlin key is not a string")
+		}
+		stringMap[keyStr] = value
 	}
 	rv := reflect.ValueOf(v)
 
@@ -84,10 +90,11 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 		if gType.ConvertibleTo(field.Type()) {
 			field.Set(reflect.ValueOf(stringMap[gremlinTag]).Convert(field.Type()))
 		} else if gType.Kind() == reflect.Slice {
+			strSlice := stringMap[gremlinTag].([]any) //nolint:errcheck // we already validated via reflect type check
 			slice := reflect.MakeSlice(
-				field.Type(), len(stringMap[gremlinTag].([]any)), len(stringMap[gremlinTag].([]any)),
+				field.Type(), len(strSlice), len(strSlice),
 			)
-			for i, v := range stringMap[gremlinTag].([]any) {
+			for i, v := range strSlice {
 				slice.Index(i).Set(reflect.ValueOf(v).Convert(field.Type().Elem()))
 			}
 			field.Set(slice)
@@ -159,32 +166,32 @@ func validateStructPointerWithAnonymousVertex(value any) error {
 
 	// Check if it's a pointer
 	if rv.Kind() != reflect.Ptr {
-		return fmt.Errorf("value must be a pointer")
+		return errors.New("value must be a pointer")
 	}
 
 	// Check if it's a nil pointer
 	if rv.IsNil() {
-		return fmt.Errorf("value cannot be nil")
+		return errors.New("value cannot be nil")
 	}
 
 	// Check if it points to a struct
 	if rv.Elem().Kind() != reflect.Struct {
-		return fmt.Errorf("value must point to a struct")
+		return errors.New("value must point to a struct")
 	}
 
 	// Get the struct type
 	rt := rv.Elem().Type()
 
 	// Check for anonymous Vertex field
-	for i := 0; i < rv.Elem().NumField(); i++ {
+	for i := range rv.Elem().NumField() {
 		field := rt.Field(i)
 
-		if field.Anonymous && field.Type == reflect.TypeOf(types.Vertex{}) {
+		if field.Anonymous && field.Type == reflect.TypeFor[gsmtypes.Vertex]() {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("struct must contain anonymous types.Vertex field")
+	return errors.New("struct must contain anonymous types.Vertex field")
 }
 
 func getStructFieldNameAndType[T any](tag string) (string, reflect.Type, error) {
@@ -196,5 +203,5 @@ func getStructFieldNameAndType[T any](tag string) (string, reflect.Type, error) 
 			return field.Name, field.Type, nil
 		}
 	}
-	return "", nil, fmt.Errorf("field not found")
+	return "", nil, errors.New("field not found")
 }
