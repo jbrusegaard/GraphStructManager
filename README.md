@@ -6,6 +6,7 @@ A type-safe, chainable query builder for Gremlin graph databases in Go. This ORM
 
 - [Overview](#overview)
 - [Setup](#setup)
+- [Environment Variables](#environment-variables)
 - [Query Builder Functions](#query-builder-functions)
   - [NewQuery](#newquery)
   - [Where](#where)
@@ -59,6 +60,38 @@ if err != nil {
     log.Fatal(err)
 }
 defer db.Close()
+```
+
+## Environment Variables
+
+GraphStructManager supports the following environment variables for configuration and debugging:
+
+### GSM_LOG_LEVEL
+
+Controls the logging level for the library. Available values:
+- `debug` - Most verbose logging
+- `info` - Standard informational logging (default)
+- `warn` - Warning messages only
+- `error` - Error messages only
+- `fatal` - Fatal errors only
+
+**Example:**
+```bash
+export GSM_LOG_LEVEL=debug
+```
+
+### GSM_DEBUG
+
+When set to `true`, enables query debugging which logs the generated Gremlin query strings before execution. This is useful for troubleshooting and understanding what queries are being sent to the database.
+
+**Example:**
+```bash
+export GSM_DEBUG=true
+```
+
+**Output example:**
+```
+INFO Running Query: V().HasLabel('test_vertex').Has('name', 'John').Limit(1).Next()
 ```
 
 ## Query Builder Functions
