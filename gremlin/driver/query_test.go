@@ -18,12 +18,12 @@ func seedData(db *GremlinDriver, data []testVertexForUtils) error {
 }
 
 func cleanDB() {
-	db, _ := Open(DbURL)
+	db, _ := Open(DbURL, Gremlin)
 	<-db.g.V().Drop().Iterate()
 }
 
 func TestQuery(t *testing.T) {
-	db, err := Open(DbURL)
+	db, err := Open(DbURL, Gremlin)
 	if err != nil {
 		t.Fatal(err)
 	}

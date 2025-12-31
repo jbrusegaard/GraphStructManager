@@ -9,10 +9,18 @@ import (
 	appLogger "github.com/jbrusegaard/graph-struct-manager/log"
 )
 
+type DatabaseDriver string
+
+const (
+	Gremlin DatabaseDriver = "gremlin"
+	Neptune DatabaseDriver = "neptune"
+)
+
 type GremlinDriver struct {
 	remoteConn *gremlingo.DriverRemoteConnection
 	g          *gremlingo.GraphTraversalSource
 	logger     *log.Logger
+	dbDriver   DatabaseDriver
 }
 
 type QueryOpts struct {
@@ -27,7 +35,7 @@ func g(remoteConnection *gremlingo.DriverRemoteConnection) *gremlingo.GraphTrave
 	return gremlingo.Traversal_().WithRemote(remoteConnection)
 }
 
-func Open(url string) (*GremlinDriver, error) {
+func Open(url string, dbDriver DatabaseDriver) (*GremlinDriver, error) {
 	driverLogger := appLogger.InitializeLogger()
 	driverLogger.Infof("Opening driver with url: %s/gremlin", url)
 	remote, err := gremlingo.NewDriverRemoteConnection(fmt.Sprintf("%s/gremlin", url))
@@ -39,6 +47,7 @@ func Open(url string) (*GremlinDriver, error) {
 		g:          g(remote),
 		remoteConn: remote,
 		logger:     driverLogger,
+		dbDriver:   dbDriver,
 	}
 	return driver, nil
 }

@@ -18,14 +18,14 @@ var cardinality = gremlingo.Cardinality
 
 // Query represents a chainable query builder
 type Query[T VertexType] struct {
-	db            *GremlinDriver
-	conditions    []*QueryCondition
-	label         string
-	limit         *int
-	offset        *int
-	orderBy       *OrderCondition
-	dedup         bool
-	queryAsString *strings.Builder
+	db          *GremlinDriver
+	conditions  []*QueryCondition
+	label       string
+	limit       *int
+	offset      *int
+	orderBy     *OrderCondition
+	dedup       bool
+	debugString *strings.Builder
 }
 
 type QueryCondition struct {
@@ -97,11 +97,11 @@ func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
 		queryAsString.WriteString(")")
 	}
 	return &Query[T]{
-		db:            db,
-		queryAsString: &queryAsString,
-		conditions:    make([]*QueryCondition, 0),
-		label:         label,
-		orderBy:       nil,
+		db:          db,
+		debugString: &queryAsString,
+		conditions:  make([]*QueryCondition, 0),
+		label:       label,
+		orderBy:     nil,
 	}
 }
 
@@ -112,7 +112,7 @@ func (q *Query[T]) Where(field string, operator comparator.Comparator, value any
 		operator: operator,
 		value:    value,
 	}
-	q.queryAsString.WriteString(queryCondition.String())
+	q.debugString.WriteString(queryCondition.String())
 
 	q.conditions = append(
 		q.conditions, &queryCondition,
@@ -125,7 +125,7 @@ func (q *Query[T]) WhereTraversal(traversal *gremlingo.GraphTraversal) *Query[T]
 	queryCondition := QueryCondition{
 		traversal: traversal,
 	}
-	q.queryAsString.WriteString(queryCondition.String())
+	q.debugString.WriteString(queryCondition.String())
 	q.conditions = append(
 		q.conditions, &queryCondition,
 	)
@@ -134,25 +134,25 @@ func (q *Query[T]) WhereTraversal(traversal *gremlingo.GraphTraversal) *Query[T]
 
 // Dedup removes duplicate results from the query
 func (q *Query[T]) Dedup() *Query[T] {
-	q.queryAsString.WriteString(".Dedup()")
+	q.debugString.WriteString(".Dedup()")
 	q.dedup = true
 	return q
 }
 
 // Limit sets the maximum number of results
 func (q *Query[T]) Limit(limit int) *Query[T] {
-	q.queryAsString.WriteString(".Limit(")
-	q.queryAsString.WriteString(strconv.Itoa(limit))
-	q.queryAsString.WriteString(")")
+	q.debugString.WriteString(".Limit(")
+	q.debugString.WriteString(strconv.Itoa(limit))
+	q.debugString.WriteString(")")
 	q.limit = &limit
 	return q
 }
 
 // Offset sets the number of results to skip
 func (q *Query[T]) Offset(offset int) *Query[T] {
-	q.queryAsString.WriteString(".Skip(")
-	q.queryAsString.WriteString(strconv.Itoa(offset))
-	q.queryAsString.WriteString(")")
+	q.debugString.WriteString(".Skip(")
+	q.debugString.WriteString(strconv.Itoa(offset))
+	q.debugString.WriteString(")")
 	q.offset = &offset
 	return q
 }
@@ -164,15 +164,15 @@ func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T] {
 			"Order by was already defined secondary order by will override original order",
 		)
 	}
-	q.queryAsString.WriteString(".OrderBy(")
-	q.queryAsString.WriteString(field)
-	q.queryAsString.WriteString(", ")
+	q.debugString.WriteString(".OrderBy(")
+	q.debugString.WriteString(field)
+	q.debugString.WriteString(", ")
 	if order == Desc {
-		q.queryAsString.WriteString("Order.Desc")
+		q.debugString.WriteString("Order.Desc")
 	} else {
-		q.queryAsString.WriteString("Order.Asc")
+		q.debugString.WriteString("Order.Asc")
 	}
-	q.queryAsString.WriteString(")")
+	q.debugString.WriteString(")")
 	desc := order != 0
 	q.orderBy = &OrderCondition{field: field, desc: desc}
 	return q
@@ -180,7 +180,7 @@ func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T] {
 
 // Find executes the query and returns all matching results
 func (q *Query[T]) Find() ([]T, error) {
-	q.queryAsString.WriteString(".ToList()")
+	q.debugString.WriteString(".ToList()")
 	query := q.buildQuery()
 	queryResults, err := toMapTraversal(query, true).ToList()
 	if err != nil {
@@ -201,7 +201,7 @@ func (q *Query[T]) Find() ([]T, error) {
 
 // Take executes the query and returns the first result
 func (q *Query[T]) Take() (T, error) {
-	q.queryAsString.WriteString(".Next()")
+	q.debugString.WriteString(".Next()")
 	var v T
 	query := q.buildQuery()
 	result, err := toMapTraversal(query, true).Next()
@@ -215,7 +215,7 @@ func (q *Query[T]) Take() (T, error) {
 
 // Count returns the number of matching results
 func (q *Query[T]) Count() (int, error) {
-	q.queryAsString.WriteString(".Count()")
+	q.debugString.WriteString(".Count()")
 	query := q.buildQuery()
 	result, err := query.Count().Next()
 	if err != nil {
@@ -230,7 +230,7 @@ func (q *Query[T]) Count() (int, error) {
 
 // Delete deletes all matching results
 func (q *Query[T]) Delete() error {
-	q.queryAsString.WriteString(".Drop().Iterate()")
+	q.debugString.WriteString(".Drop().Iterate()")
 	query := q.buildQuery()
 	err := query.Drop().Iterate()
 	return <-err
@@ -266,31 +266,39 @@ func (q *Query[T]) Update(propertyName string, value any) error {
 	query.Property(cardinality.Single, gsmtypes.LastModified, time.Now().UTC())
 	switch fieldType.Kind() { //nolint: exhaustive // We are only handling slices and maps otherwise regular cardinality
 	case reflect.Slice:
+		cardinality := gremlingo.Cardinality.List
+		cardinalityString := "Cardinality.List"
+		if q.db.dbDriver == Neptune {
+			cardinalityString = "Cardinality.Set"
+			cardinality = gremlingo.Cardinality.Set
+		}
 		sliceValue, _ := value.([]any)
 		for _, v := range sliceValue {
-			q.queryAsString.WriteString(".Property(Cardinality.Set, ")
-			q.queryAsString.WriteString(propertyName)
-			q.queryAsString.WriteString(", ")
-			fmt.Fprintf(q.queryAsString, "%v", v)
-			q.queryAsString.WriteString(")")
-			query = query.Property(gremlingo.Cardinality.Set, propertyName, v)
+			q.debugString.WriteString(".Property(")
+			q.debugString.WriteString(cardinalityString)
+			q.debugString.WriteString(", ")
+			q.debugString.WriteString(propertyName)
+			q.debugString.WriteString(", ")
+			fmt.Fprintf(q.debugString, "%v", v)
+			q.debugString.WriteString(")")
+			query = query.Property(cardinality, propertyName, v)
 		}
 	case reflect.Map:
 		mapValue, _ := value.(map[any]any)
 		for k := range mapValue {
-			q.queryAsString.WriteString(".Property(Cardinality.Set, ")
-			q.queryAsString.WriteString(propertyName)
-			q.queryAsString.WriteString(", ")
-			fmt.Fprintf(q.queryAsString, "%v", k)
-			q.queryAsString.WriteString(")")
+			q.debugString.WriteString(".Property(Cardinality.Set, ")
+			q.debugString.WriteString(propertyName)
+			q.debugString.WriteString(", ")
+			fmt.Fprintf(q.debugString, "%v", k)
+			q.debugString.WriteString(")")
 			query = query.Property(gremlingo.Cardinality.Set, propertyName, k)
 		}
 	default:
-		q.queryAsString.WriteString(".Property(Cardinality.Single, ")
-		q.queryAsString.WriteString(propertyName)
-		q.queryAsString.WriteString(", ")
-		fmt.Fprintf(q.queryAsString, "%v", value)
-		q.queryAsString.WriteString(")")
+		q.debugString.WriteString(".Property(Cardinality.Single, ")
+		q.debugString.WriteString(propertyName)
+		q.debugString.WriteString(", ")
+		fmt.Fprintf(q.debugString, "%v", value)
+		q.debugString.WriteString(")")
 		query = query.Property(gremlingo.Cardinality.Single, propertyName, value)
 	}
 	errChan := query.Iterate()
@@ -300,7 +308,7 @@ func (q *Query[T]) Update(propertyName string, value any) error {
 // buildQuery constructs the Gremlin traversal from the query conditions
 func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
 	if os.Getenv("GSM_DEBUG") == "true" {
-		q.db.logger.Infof("Running Query: %s", q.queryAsString.String())
+		q.db.logger.Infof("Running Query: %s", q.debugString.String())
 	}
 	query := q.db.g.V()
 
