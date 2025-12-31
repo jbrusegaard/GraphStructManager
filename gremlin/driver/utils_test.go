@@ -22,6 +22,16 @@ type testVertexWithNumSlice struct {
 	ListInts []int `json:"listInts" gremlin:"listInts"`
 }
 
+type testVertexWithCustomLabel struct {
+	gsmtypes.Vertex
+	Name string `json:"name" gremlin:"name"`
+}
+
+// Label implements a custom label function
+func (v *testVertexWithCustomLabel) Label() string {
+	return "customVertexLabel"
+}
+
 func TestUtils(t *testing.T) {
 	t.Parallel()
 	t.Run(
@@ -188,6 +198,92 @@ func TestUtils(t *testing.T) {
 			_, _, err := structToMap(1)
 			if err == nil {
 				t.Errorf("No error struct to map: %v", err)
+			}
+		},
+	)
+	t.Run(
+		"TestStructToMapWithCustomLabel", func(t *testing.T) {
+			t.Parallel()
+			v := testVertexWithCustomLabel{
+				Name: "test",
+			}
+			label, mapValue, err := structToMap(v)
+			if err != nil {
+				t.Errorf("Error getting struct to map: %v", err)
+			}
+			// Verify custom label is used instead of normalized struct name
+			if label != "customVertexLabel" {
+				t.Errorf("Label should be customVertexLabel, got %s", label)
+			}
+			if mapValue["name"] != "test" {
+				t.Errorf("Map value name should be test, got %s", mapValue["name"])
+			}
+		},
+	)
+	t.Run(
+		"TestGetLabelFromValueWithCustomLabel", func(t *testing.T) {
+			t.Parallel()
+			v := testVertexWithCustomLabel{
+				Name: "test",
+			}
+			label, err := getLabelFromValue(v)
+			if err != nil {
+				t.Errorf("Error getting label from value: %v", err)
+			}
+			// Verify custom label is used
+			if label != "customVertexLabel" {
+				t.Errorf("Label should be customVertexLabel, got %s", label)
+			}
+		},
+	)
+	t.Run(
+		"TestGetLabelFromValueWithDefaultLabel", func(t *testing.T) {
+			t.Parallel()
+			v := testVertexForUtils{
+				Name: "test",
+			}
+			label, err := getLabelFromValue(v)
+			if err != nil {
+				t.Errorf("Error getting label from value: %v", err)
+			}
+			// Verify default normalization is used when Label() returns empty
+			if label != "test_vertex_for_utils" {
+				t.Errorf("Label should be test_vertex_for_utils, got %s", label)
+			}
+		},
+	)
+	t.Run(
+		"TestGetLabelFromValueWithCustomLabelPointer", func(t *testing.T) {
+			t.Parallel()
+			v := &testVertexWithCustomLabel{
+				Name: "test",
+			}
+			label, err := getLabelFromValue(v)
+			if err != nil {
+				t.Errorf("Error getting label from value: %v", err)
+			}
+			// Verify custom label is used when passing a pointer
+			if label != "customVertexLabel" {
+				t.Errorf("Label should be customVertexLabel, got %s", label)
+			}
+		},
+	)
+	t.Run(
+		"TestStructToMapWithCustomLabelPointer", func(t *testing.T) {
+			t.Parallel()
+			v := &testVertexWithCustomLabel{
+				Name: "test",
+			}
+			label, mapValue, err := structToMap(v)
+			if err != nil {
+				t.Errorf("Error getting struct to map: %v", err)
+			}
+			// Verify custom label is used when passing a pointer
+			if label != "customVertexLabel" {
+				t.Errorf("Label should be customVertexLabel, got %s", label)
+			}
+			if mapValue["name"] != "test" {
+				t.Errorf("Map value name should be test, got %s", mapValue["name"])
 			}
 		},
 	)

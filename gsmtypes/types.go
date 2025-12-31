@@ -16,6 +16,11 @@ type Vertex struct {
 func (v Vertex) GetVertexID() any                 { return v.ID }
 func (v Vertex) GetVertexLastModified() time.Time { return v.LastModified }
 func (v Vertex) GetVertexCreatedAt() time.Time    { return v.CreatedAt }
+func (v Vertex) Label() string {
+	// Default implementation returns empty string
+	// The driver will use struct name normalization when Label() returns empty
+	return ""
+}
 
 type Edge struct {
 	ID           any    `json:"id"            gremlin:"id"`
@@ -26,3 +31,8 @@ type Edge struct {
 func (e Edge) GetEdgeID() any              { return e.ID }
 func (e Edge) GetEdgeLastModified() string { return e.LastModified }
 func (e Edge) GetEdgeCreatedAt() int64     { return e.CreatedAt }
+func (e Edge) Label() string {
+	// Default implementation returns empty string
+	// The driver will use struct name normalization when Label() returns empty
+	return ""
+}

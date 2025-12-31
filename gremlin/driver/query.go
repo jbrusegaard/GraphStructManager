@@ -9,7 +9,6 @@ import (
 	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
-	"github.com/gobeam/stringy"
 	"github.com/jbrusegaard/graph-struct-manager/comparator"
 	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
@@ -79,11 +78,13 @@ type OrderCondition struct {
 }
 
 func getLabel[T VertexType]() (string, error) {
-	structName, err := getStructName[T]()
+	var v T
+	// Use getLabelFromValue to support both pointer and value receivers
+	label, err := getLabelFromValue(v)
 	if err != nil {
 		return "", err
 	}
-	return stringy.New(structName).SnakeCase().ToLower(), nil
+	return label, nil
 }
 
 // NewQuery creates a new query builder for type T
