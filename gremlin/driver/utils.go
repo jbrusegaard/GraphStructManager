@@ -110,85 +110,32 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 	}
 }
 
-// getLabelFromValue gets the label from a value, using the Label() method if it returns a non-empty string,
-// otherwise falling back to struct name normalization
-// Supports both pointer and value receivers for the Label() method
-func getLabelFromValue( //nolint:gocognit // this is a complex function but it's necessary to support both pointer and value receivers
-	value any,
-) (string, error) {
-	rv := reflect.ValueOf(value)
-	originalRv := rv
-
-	// Get the underlying struct type
-	if rv.Kind() == reflect.Ptr {
-		if rv.IsNil() {
-			return "", errors.New("value is a nil pointer")
+func getLabelFromVertex(value VertexType) string {
+	label := value.Label()
+	if label == "" {
+		// Get the concrete type from the interface
+		concreteType := reflect.ValueOf(value).Type()
+		// Handle pointer types
+		if concreteType.Kind() == reflect.Ptr {
+			concreteType = concreteType.Elem()
 		}
-		rv = rv.Elem()
+		return stringy.New(concreteType.Name()).SnakeCase().ToLower()
 	}
-	if rv.Kind() != reflect.Struct {
-		return "", errors.New("value is not a struct")
-	}
-	rt := rv.Type()
+	return label
+}
 
-	// Try to call Label() method using reflection to support both pointer and value receivers
-	var labelMethod reflect.Value
-
-	// First, try on the original value (which might be a pointer)
-	if originalRv.Kind() == reflect.Ptr {
-		labelMethod = originalRv.MethodByName("Label")
-	}
-
-	// If not found on pointer, try on the value itself (for value receivers)
-	if !labelMethod.IsValid() {
-		labelMethod = rv.MethodByName("Label")
-	}
-
-	// If still not found and we have a value (not pointer), try getting a pointer to it
-	// This handles the case where Label() has a pointer receiver but we received a value
-	if !labelMethod.IsValid() && originalRv.Kind() != reflect.Ptr {
-		// Check if the value is addressable (can take its address)
-		if rv.CanAddr() {
-			labelMethod = rv.Addr().MethodByName("Label")
-		} else {
-			// If not addressable, create a new pointer with the value copied
-			ptrRv := reflect.New(rt)
-			ptrRv.Elem().Set(rv)
-			labelMethod = ptrRv.MethodByName("Label")
+func getLabelFromEdge(value EdgeType) string {
+	label := value.Label()
+	if label == "" {
+		// Get the concrete type from the interface
+		concreteType := reflect.ValueOf(value).Type()
+		// Handle pointer types
+		if concreteType.Kind() == reflect.Ptr {
+			concreteType = concreteType.Elem()
 		}
+		return stringy.New(concreteType.Name()).SnakeCase().ToLower()
 	}
-
-	if labelMethod.IsValid() {
-		// Call the Label() method
-		results := labelMethod.Call(nil)
-		if len(results) > 0 {
-			label := results[0].String()
-			// If Label() returns empty string, use struct name normalization
-			if label == "" {
-				return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
-			}
-			return label, nil
-		}
-	}
-
-	// Fallback: try interface assertion (for value receivers)
-	if vertexType, ok := value.(VertexType); ok {
-		label := vertexType.Label()
-		if label == "" {
-			return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
-		}
-		return label, nil
-	}
-	if edgeType, ok := value.(EdgeType); ok {
-		label := edgeType.Label()
-		if label == "" {
-			return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
-		}
-		return label, nil
-	}
-
-	// Fallback to struct name normalization
-	return stringy.New(rt.Name()).SnakeCase().ToLower(), nil
+	return label
 }
 
 // structToMap converts a struct to a map[string]any and returns the label and the map
@@ -197,6 +144,7 @@ func getLabelFromValue( //nolint:gocognit // this is a complex function but it's
 // the error is the error if any
 func structToMap(value any) (string, map[string]any, error) {
 	mapValue := make(map[string]any)
+	var err error
 
 	// Get the reflection value
 	rv := reflect.ValueOf(value)
@@ -209,15 +157,18 @@ func structToMap(value any) (string, map[string]any, error) {
 	if rv.Kind() != reflect.Struct {
 		return "", nil, errors.New("value is not a struct")
 	}
-
-	// Get the label using the helper function
-	label, err := getLabelFromValue(value)
-	if err != nil {
-		return "", nil, err
-	}
-
 	// Get the type information
 	rt := rv.Type()
+
+	// Get the label using the helper function
+	var label string
+	if vertexType, vertexOk := value.(VertexType); vertexOk {
+		label = getLabelFromVertex(vertexType)
+	} else if edgeType, edgeOk := value.(EdgeType); edgeOk {
+		label = getLabelFromEdge(edgeType)
+	} else {
+		return "", nil, errors.New("value must implement either VertexType or EdgeType")
+	}
 
 	// Loop through all fields
 	for i := range rv.NumField() {

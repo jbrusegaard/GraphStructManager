@@ -204,7 +204,7 @@ func TestUtils(t *testing.T) {
 	t.Run(
 		"TestStructToMapWithCustomLabel", func(t *testing.T) {
 			t.Parallel()
-			v := testVertexWithCustomLabel{
+			v := &testVertexWithCustomLabel{
 				Name: "test",
 			}
 			label, mapValue, err := structToMap(v)
@@ -223,13 +223,10 @@ func TestUtils(t *testing.T) {
 	t.Run(
 		"TestGetLabelFromValueWithCustomLabel", func(t *testing.T) {
 			t.Parallel()
-			v := testVertexWithCustomLabel{
+			v := &testVertexWithCustomLabel{
 				Name: "test",
 			}
-			label, err := getLabelFromValue(v)
-			if err != nil {
-				t.Errorf("Error getting label from value: %v", err)
-			}
+			label := getLabelFromVertex(v)
 			// Verify custom label is used
 			if label != "customVertexLabel" {
 				t.Errorf("Label should be customVertexLabel, got %s", label)
@@ -239,13 +236,10 @@ func TestUtils(t *testing.T) {
 	t.Run(
 		"TestGetLabelFromValueWithDefaultLabel", func(t *testing.T) {
 			t.Parallel()
-			v := testVertexForUtils{
+			v := &testVertexForUtils{
 				Name: "test",
 			}
-			label, err := getLabelFromValue(v)
-			if err != nil {
-				t.Errorf("Error getting label from value: %v", err)
-			}
+			label := getLabelFromVertex(v)
 			// Verify default normalization is used when Label() returns empty
 			if label != "test_vertex_for_utils" {
 				t.Errorf("Label should be test_vertex_for_utils, got %s", label)
@@ -258,10 +252,7 @@ func TestUtils(t *testing.T) {
 			v := &testVertexWithCustomLabel{
 				Name: "test",
 			}
-			label, err := getLabelFromValue(v)
-			if err != nil {
-				t.Errorf("Error getting label from value: %v", err)
-			}
+			label := getLabelFromVertex(v)
 			// Verify custom label is used when passing a pointer
 			if label != "customVertexLabel" {
 				t.Errorf("Label should be customVertexLabel, got %s", label)

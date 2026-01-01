@@ -80,10 +80,7 @@ type OrderCondition struct {
 func getLabel[T VertexType]() (string, error) {
 	var v T
 	// Use getLabelFromValue to support both pointer and value receivers
-	label, err := getLabelFromValue(v)
-	if err != nil {
-		return "", err
-	}
+	label := getLabelFromVertex(v)
 	return label, nil
 }
 
