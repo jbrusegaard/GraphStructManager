@@ -1,4 +1,4 @@
-# GraphStructManager - Gremlin Query Builder
+# GraphStructManager - Gremlin Query Builder [![Go Reference](https://pkg.go.dev/badge/github.com/jbrusegaard/graph-struct-manager.svg)](https://pkg.go.dev/github.com/jbrusegaard/graph-struct-manager)
 
 A type-safe, chainable query builder for Gremlin graph databases in Go. This ORM provides an intuitive interface for building and executing Gremlin queries with full type safety.
 
