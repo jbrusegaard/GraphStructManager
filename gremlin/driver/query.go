@@ -19,6 +19,7 @@ var cardinality = gremlingo.Cardinality
 type Query[T VertexType] struct {
 	db          *GremlinDriver
 	conditions  []*QueryCondition
+	ids         []any
 	label       string
 	limit       *int
 	offset      *int
@@ -94,9 +95,11 @@ func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
 		queryAsString.WriteString(label)
 		queryAsString.WriteString(")")
 	}
+	ids := make([]any, 0)
 	return &Query[T]{
 		db:          db,
 		debugString: &queryAsString,
+		ids:         ids,
 		conditions:  make([]*QueryCondition, 0),
 		label:       label,
 		orderBy:     nil,
@@ -134,6 +137,20 @@ func (q *Query[T]) WhereTraversal(traversal *gremlingo.GraphTraversal) *Query[T]
 func (q *Query[T]) Dedup() *Query[T] {
 	q.writeDebugString(".Dedup()")
 	q.dedup = true
+	return q
+}
+
+// IDs adds the ids to the query
+// You can use this to speed up the query by using the graph index
+func (q *Query[T]) IDs(id ...any) *Query[T] {
+	if os.Getenv("GSM_DEBUG") == "true" {
+		q.writeDebugString(".V(")
+		for _, id := range id {
+			q.writeDebugString(fmt.Sprintf("%v, ", id))
+		}
+		q.writeDebugString(")")
+	}
+	q.ids = append(q.ids, id...)
 	return q
 }
 
@@ -179,7 +196,7 @@ func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T] {
 // Find executes the query and returns all matching results
 func (q *Query[T]) Find() ([]T, error) {
 	q.writeDebugString(".ToList()")
-	query := q.buildQuery()
+	query := q.BuildQuery()
 	queryResults, err := toMapTraversal(query, true).ToList()
 	if err != nil {
 		return nil, err
@@ -188,7 +205,7 @@ func (q *Query[T]) Find() ([]T, error) {
 	results := make([]T, 0, len(queryResults))
 	for _, result := range queryResults {
 		var v T
-		err = unloadGremlinResultIntoStruct(&v, result)
+		err = UnloadGremlinResultIntoStruct(&v, result)
 		if err != nil {
 			return nil, err
 		}
@@ -201,20 +218,20 @@ func (q *Query[T]) Find() ([]T, error) {
 func (q *Query[T]) Take() (T, error) {
 	q.writeDebugString(".Next()")
 	var v T
-	query := q.buildQuery()
+	query := q.BuildQuery()
 	result, err := toMapTraversal(query, true).Next()
 	if err != nil {
 		return v, err
 	}
 
-	err = unloadGremlinResultIntoStruct(&v, result)
+	err = UnloadGremlinResultIntoStruct(&v, result)
 	return v, err
 }
 
 // Count returns the number of matching results
 func (q *Query[T]) Count() (int, error) {
 	q.writeDebugString(".Count()")
-	query := q.buildQuery()
+	query := q.BuildQuery()
 	result, err := query.Count().Next()
 	if err != nil {
 		return 0, err
@@ -229,7 +246,7 @@ func (q *Query[T]) Count() (int, error) {
 // Delete deletes all matching results
 func (q *Query[T]) Delete() error {
 	q.writeDebugString(".Drop().Iterate()")
-	query := q.buildQuery()
+	query := q.BuildQuery()
 	err := query.Drop().Iterate()
 	return <-err
 }
@@ -247,7 +264,7 @@ func (q *Query[T]) ID(id any) (T, error) {
 	if err != nil {
 		return v, err
 	}
-	err = unloadGremlinResultIntoStruct(&v, result)
+	err = UnloadGremlinResultIntoStruct(&v, result)
 	return v, err
 }
 
@@ -260,7 +277,7 @@ func (q *Query[T]) Update(propertyName string, value any) error {
 	if err != nil {
 		return fmt.Errorf("propertyName not found in gremlin struct tags: %s", propertyName)
 	}
-	query := q.buildQuery()
+	query := q.BuildQuery()
 	query.Property(cardinality.Single, gsmtypes.LastModified, time.Now().UTC())
 	switch fieldType.Kind() { //nolint: exhaustive // We are only handling slices and maps otherwise regular cardinality
 	case reflect.Slice:
@@ -310,13 +327,18 @@ func (q *Query[T]) writeDebugString(s string) {
 	}
 }
 
-// buildQuery constructs the Gremlin traversal from the query conditions
-func (q *Query[T]) buildQuery() *gremlingo.GraphTraversal {
+// BuildQuery constructs the Gremlin traversal from the query conditions
+func (q *Query[T]) BuildQuery() *gremlingo.GraphTraversal {
 	if os.Getenv("GSM_DEBUG") == "true" {
 		q.db.logger.Infof("Running Query: %s", q.debugString.String())
 		q.debugString.Reset()
 	}
-	query := q.db.g.V()
+	var query *gremlingo.GraphTraversal
+	if len(q.ids) > 0 {
+		query = q.db.g.V(q.ids...)
+	} else {
+		query = q.db.g.V()
+	}
 
 	if q.label != "" {
 		query = query.HasLabel(q.label)

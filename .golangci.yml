@@ -68,6 +68,9 @@ linters:
     - wastedassign
     - whitespace
   settings:
+    goconst:
+      ignore-string-values:
+        - 'true'
     cyclop:
       max-complexity: 30
       package-average: 10

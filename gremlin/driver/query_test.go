@@ -272,4 +272,26 @@ func TestQuery(t *testing.T) {
 			}
 		},
 	)
+	t.Run(
+		"TestQueryIDs", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			models, err := Model[testVertexForUtils](db).Find()
+			if err != nil {
+				t.Error(err)
+			}
+			for _, model := range models {
+				mdl, err := Model[testVertexForUtils](db).IDs(model.ID).Take()
+				if err != nil {
+					t.Error(err)
+				}
+				if mdl.Name != model.Name {
+					t.Errorf("Expected %s result, got %s", model.Name, mdl.Name)
+				}
+			}
+		},
+	)
 }

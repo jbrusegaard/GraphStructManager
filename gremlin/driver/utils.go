@@ -51,7 +51,12 @@ func getStructName[T any]() (string, error) {
 	return t.Name(), nil
 }
 
-func unloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {
+// UnloadGremlinResultIntoStruct unloads a gremlin result into a struct
+// it will recursively unload the result into the struct
+// v any must be a pointer to a struct
+// result *gremlingo.Result is the gremlin result to unload which must be a map
+// note the struct must have gremlin tags on the fields to be unloaded
+func UnloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {
 	mapResult, ok := result.GetInterface().(map[any]any)
 	if !ok {
 		return errors.New("result is not a map")

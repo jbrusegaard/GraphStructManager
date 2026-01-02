@@ -60,7 +60,7 @@ func TestUtils(t *testing.T) {
 			t.Parallel()
 			var v testVertexForUtils
 			now := time.Now().UTC()
-			err := unloadGremlinResultIntoStruct(
+			err := UnloadGremlinResultIntoStruct(
 				&v, &gremlingo.Result{
 					Data: map[any]any{
 						"id":            "1",
@@ -144,10 +144,10 @@ func TestUtils(t *testing.T) {
 		t.Run(
 			tt.testName, func(t *testing.T) {
 				t.Parallel()
-				err := unloadGremlinResultIntoStruct(tt.v, tt.result)
+				err := UnloadGremlinResultIntoStruct(tt.v, tt.result)
 				if (err != nil) != tt.shouldErr {
 					t.Errorf(
-						"unloadGremlinResultIntoStruct() error = %v, shouldErr %v",
+						"UnloadGremlinResultIntoStruct() error = %v, shouldErr %v",
 						err,
 						tt.shouldErr,
 					)
