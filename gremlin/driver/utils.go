@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
-	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 	"github.com/gobeam/stringy"
@@ -25,20 +24,6 @@ const (
 	Asc GremlinOrder = iota
 	Desc
 )
-
-type VertexType interface {
-	GetVertexID() any
-	GetVertexLastModified() time.Time
-	GetVertexCreatedAt() time.Time
-	Label() string
-}
-
-type EdgeType interface {
-	GetEdgeID() any
-	GetEdgeLastModified() string
-	GetEdgeCreatedAt() int64
-	Label() string
-}
 
 // getStructName takes a generic type T, confirms it's a struct, and returns its name
 func getStructName[T any]() (string, error) {
@@ -115,7 +100,7 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 	}
 }
 
-func getLabelFromVertex(value VertexType) string {
+func getLabelFromVertex(value gsmtypes.VertexType) string {
 	label := value.Label()
 	if label == "" {
 		// Get the concrete type from the interface
@@ -129,7 +114,7 @@ func getLabelFromVertex(value VertexType) string {
 	return label
 }
 
-func getLabelFromEdge(value EdgeType) string {
+func getLabelFromEdge(value gsmtypes.EdgeType) string {
 	label := value.Label()
 	if label == "" {
 		// Get the concrete type from the interface
@@ -167,9 +152,9 @@ func structToMap(value any) (string, map[string]any, error) {
 
 	// Get the label using the helper function
 	var label string
-	if vertexType, vertexOk := value.(VertexType); vertexOk {
+	if vertexType, vertexOk := value.(gsmtypes.VertexType); vertexOk {
 		label = getLabelFromVertex(vertexType)
-	} else if edgeType, edgeOk := value.(EdgeType); edgeOk {
+	} else if edgeType, edgeOk := value.(gsmtypes.EdgeType); edgeOk {
 		label = getLabelFromEdge(edgeType)
 	} else {
 		return "", nil, errors.New("value must implement either VertexType or EdgeType")
