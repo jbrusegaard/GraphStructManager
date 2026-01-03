@@ -16,7 +16,7 @@ import (
 var cardinality = gremlingo.Cardinality
 
 // Query represents a chainable query builder
-type Query[T VertexType] struct {
+type Query[T gsmtypes.VertexType] struct {
 	db          *GremlinDriver
 	conditions  []*QueryCondition
 	ids         []any
@@ -78,7 +78,7 @@ type OrderCondition struct {
 	desc  bool
 }
 
-func getLabel[T VertexType]() (string, error) {
+func getLabel[T gsmtypes.VertexType]() (string, error) {
 	var v T
 	// Use getLabelFromValue to support both pointer and value receivers
 	label := getLabelFromVertex(v)
@@ -86,7 +86,7 @@ func getLabel[T VertexType]() (string, error) {
 }
 
 // NewQuery creates a new query builder for type T
-func NewQuery[T VertexType](db *GremlinDriver) *Query[T] {
+func NewQuery[T gsmtypes.VertexType](db *GremlinDriver) *Query[T] {
 	label, _ := getLabel[T]()
 	queryAsString := strings.Builder{}
 	queryAsString.WriteString("V()")

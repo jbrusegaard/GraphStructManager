@@ -6,6 +6,7 @@ import (
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
 	"github.com/charmbracelet/log"
 	"github.com/jbrusegaard/graph-struct-manager/comparator"
+	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 	appLogger "github.com/jbrusegaard/graph-struct-manager/log"
 )
 
@@ -64,7 +65,7 @@ func (driver *GremlinDriver) Label(label string) *RawQuery {
 	}
 }
 
-func Save[T VertexType](driver *GremlinDriver, v *T) error {
+func Save[T gsmtypes.VertexType](driver *GremlinDriver, v *T) error {
 	if (*v).GetVertexID() == nil {
 		return Create(driver, v)
 	}
@@ -74,12 +75,12 @@ func Save[T VertexType](driver *GremlinDriver, v *T) error {
 // Package-level generic functions
 
 // Model returns a new query builder for the specified type
-func Model[T VertexType](driver *GremlinDriver) *Query[T] {
+func Model[T gsmtypes.VertexType](driver *GremlinDriver) *Query[T] {
 	return NewQuery[T](driver)
 }
 
 // Where is a convenience method that creates a new query with a condition
-func Where[T VertexType](
+func Where[T gsmtypes.VertexType](
 	driver *GremlinDriver,
 	field string,
 	operator comparator.Comparator,
