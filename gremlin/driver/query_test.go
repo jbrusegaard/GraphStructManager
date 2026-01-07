@@ -29,8 +29,9 @@ func TestQuery(t *testing.T) {
 	}
 	seededData := []testVertexForUtils{
 		{
-			Name: "first",
-			Sort: 1,
+			Name:     "first",
+			Sort:     1,
+			ListTest: []string{"test123", "test"},
 		},
 		{
 			Name: "second",

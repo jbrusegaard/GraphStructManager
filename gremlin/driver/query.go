@@ -17,15 +17,16 @@ var cardinality = gremlingo.Cardinality
 
 // Query represents a chainable query builder
 type Query[T gsmtypes.VertexType] struct {
-	db          *GremlinDriver
-	conditions  []*QueryCondition
-	ids         []any
-	label       string
-	limit       *int
-	offset      *int
-	orderBy     *OrderCondition
-	dedup       bool
-	debugString *strings.Builder
+	db            *GremlinDriver
+	conditions    []*QueryCondition
+	ids           []any
+	label         string
+	limit         *int
+	offset        *int
+	subTraversals map[string]*gremlingo.GraphTraversal
+	orderBy       *OrderCondition
+	dedup         bool
+	debugString   *strings.Builder
 }
 
 type QueryCondition struct {
@@ -97,12 +98,13 @@ func NewQuery[T gsmtypes.VertexType](db *GremlinDriver) *Query[T] {
 	}
 	ids := make([]any, 0)
 	return &Query[T]{
-		db:          db,
-		debugString: &queryAsString,
-		ids:         ids,
-		conditions:  make([]*QueryCondition, 0),
-		label:       label,
-		orderBy:     nil,
+		db:            db,
+		debugString:   &queryAsString,
+		ids:           ids,
+		conditions:    make([]*QueryCondition, 0),
+		label:         label,
+		orderBy:       nil,
+		subTraversals: make(map[string]*gremlingo.GraphTraversal),
 	}
 }
 
@@ -197,7 +199,7 @@ func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T] {
 func (q *Query[T]) Find() ([]T, error) {
 	q.writeDebugString(".ToList()")
 	query := q.BuildQuery()
-	queryResults, err := toMapTraversal(query, true).ToList()
+	queryResults, err := toMapTraversal(query, q.subTraversals, true).ToList()
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +221,7 @@ func (q *Query[T]) Take() (T, error) {
 	q.writeDebugString(".Next()")
 	var v T
 	query := q.BuildQuery()
-	result, err := toMapTraversal(query, true).Next()
+	result, err := toMapTraversal(query, q.subTraversals, true).Next()
 	if err != nil {
 		return v, err
 	}
@@ -260,7 +262,7 @@ func (q *Query[T]) ID(id any) (T, error) {
 		return v, err
 	}
 	query = query.HasLabel(label)
-	result, err := toMapTraversal(query, true).Next()
+	result, err := toMapTraversal(query, q.subTraversals, true).Next()
 	if err != nil {
 		return v, err
 	}
@@ -411,12 +413,31 @@ func (q *Query[T]) addQueryConditions(query *gremlingo.GraphTraversal) {
 	}
 }
 
-func toMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.GraphTraversal {
-	return query.ValueMap(args...).By(
-		anonymousTraversal.Choose(
-			anonymousTraversal.Count(Scope.Local).Is(P.Eq(1)),
-			anonymousTraversal.Unfold(),
-			anonymousTraversal.Identity(),
-		),
+func toMapTraversal(
+	query *gremlingo.GraphTraversal,
+	subtraversals map[string]*gremlingo.GraphTraversal,
+	args ...any,
+) *gremlingo.GraphTraversal {
+	subtraversalsKeys := make([]any, 0, len(subtraversals))
+	for key := range subtraversals {
+		subtraversalsKeys = append(subtraversalsKeys, key)
+	}
+	projectQuery := gremlingo.T__.Project(subtraversalsKeys...)
+	for _, key := range subtraversalsKeys {
+		keyString := key.(string) //nolint:errcheck //we already know this is a string
+		projectQuery = projectQuery.By(subtraversals[keyString])
+	}
+	query = query.Local(
+		gremlingo.T__.Union(
+			gremlingo.T__.ValueMap(args...).By(
+				anonymousTraversal.Choose(
+					anonymousTraversal.Count(Scope.Local).Is(P.Eq(1)),
+					anonymousTraversal.Unfold(),
+					anonymousTraversal.Identity(),
+				),
+			),
+			projectQuery,
+		).Unfold().Group().By(gremlingo.Column.Keys).By(gremlingo.T__.Select(gremlingo.Column.Values)),
 	)
+	return query
 }
