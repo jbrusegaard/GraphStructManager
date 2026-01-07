@@ -31,11 +31,12 @@ func TestQuery(t *testing.T) {
 		{
 			Name:     "first",
 			Sort:     1,
-			ListTest: []string{"test123", "test"},
+			ListTest: []string{"test123"},
 		},
 		{
-			Name: "second",
-			Sort: 2,
+			Name:     "second",
+			Sort:     2,
+			ListTest: []string{"test123", "test"},
 		},
 		{
 			Name: "third",

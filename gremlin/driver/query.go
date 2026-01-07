@@ -426,6 +426,15 @@ func toMapTraversal(
 	subtraversals map[string]*gremlingo.GraphTraversal,
 	args ...any,
 ) *gremlingo.GraphTraversal {
+	if len(subtraversals) == 0 {
+		return query.ValueMap(args...).By(
+			anonymousTraversal.Choose(
+				anonymousTraversal.Count(Scope.Local).Is(P.Eq(1)),
+				anonymousTraversal.Unfold(),
+				anonymousTraversal.Identity(),
+			),
+		)
+	}
 	subtraversalsKeys := make([]any, 0, len(subtraversals))
 	for key := range subtraversals {
 		subtraversalsKeys = append(subtraversalsKeys, key)
