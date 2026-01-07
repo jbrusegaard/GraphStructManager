@@ -108,6 +108,14 @@ func NewQuery[T gsmtypes.VertexType](db *GremlinDriver) *Query[T] {
 	}
 }
 
+func (q *Query[T]) AddSubTraversal(
+	gremlinTag string,
+	traversal *gremlingo.GraphTraversal,
+) *Query[T] {
+	q.subTraversals[gremlinTag] = traversal
+	return q
+}
+
 // Where adds a condition to the query
 func (q *Query[T]) Where(field string, operator comparator.Comparator, value any) *Query[T] {
 	queryCondition := QueryCondition{
