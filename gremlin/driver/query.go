@@ -2,6 +2,7 @@ package driver
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	gremlingo "github.com/apache/tinkerpop/gremlin-go/v3/driver"
+	"github.com/charmbracelet/log"
 	"github.com/jbrusegaard/graph-struct-manager/comparator"
 	"github.com/jbrusegaard/graph-struct-manager/gsmtypes"
 )
@@ -17,15 +19,16 @@ var cardinality = gremlingo.Cardinality
 
 // Query represents a chainable query builder
 type Query[T gsmtypes.VertexType] struct {
-	db          *GremlinDriver
-	conditions  []*QueryCondition
-	ids         []any
-	label       string
-	limit       *int
-	offset      *int
-	orderBy     *OrderCondition
-	dedup       bool
-	debugString *strings.Builder
+	db            *GremlinDriver
+	conditions    []*QueryCondition
+	ids           []any
+	label         string
+	limit         *int
+	offset        *int
+	orderBy       *OrderCondition
+	dedup         bool
+	subTraversals map[string]*gremlingo.GraphTraversal
+	debugString   *strings.Builder
 }
 
 type QueryCondition struct {
@@ -97,12 +100,13 @@ func NewQuery[T gsmtypes.VertexType](db *GremlinDriver) *Query[T] {
 	}
 	ids := make([]any, 0)
 	return &Query[T]{
-		db:          db,
-		debugString: &queryAsString,
-		ids:         ids,
-		conditions:  make([]*QueryCondition, 0),
-		label:       label,
-		orderBy:     nil,
+		db:            db,
+		debugString:   &queryAsString,
+		ids:           ids,
+		conditions:    make([]*QueryCondition, 0),
+		label:         label,
+		subTraversals: make(map[string]*gremlingo.GraphTraversal),
+		orderBy:       nil,
 	}
 }
 
@@ -195,15 +199,21 @@ func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T] {
 
 // Find executes the query and returns all matching results
 func (q *Query[T]) Find() ([]T, error) {
+	var val T
 	q.writeDebugString(".ToList()")
 	query := q.BuildQuery()
-	queryResults, err := toMapTraversal(query, true).ToList()
+	queryMap := structToQueryMap(val)
+	maps.Copy(queryMap, q.subTraversals)
+	query = projectTraversal(query, queryMap)
+	// query = ValueMapTraversal(query, true)
+	queryResults, err := query.ToList()
 	if err != nil {
 		return nil, err
 	}
 
 	results := make([]T, 0, len(queryResults))
 	for _, result := range queryResults {
+		log.Infof("Result: %v", result)
 		var v T
 		err = UnloadGremlinResultIntoStruct(&v, result)
 		if err != nil {
@@ -219,7 +229,10 @@ func (q *Query[T]) Take() (T, error) {
 	q.writeDebugString(".Next()")
 	var v T
 	query := q.BuildQuery()
-	result, err := toMapTraversal(query, true).Next()
+	queryMap := structToQueryMap(v)
+	maps.Copy(queryMap, q.subTraversals)
+	query = projectTraversal(query, queryMap)
+	result, err := query.Next()
 	if err != nil {
 		return v, err
 	}
@@ -260,7 +273,10 @@ func (q *Query[T]) ID(id any) (T, error) {
 		return v, err
 	}
 	query = query.HasLabel(label)
-	result, err := toMapTraversal(query, true).Next()
+	queryMap := structToQueryMap(v)
+	maps.Copy(queryMap, q.subTraversals)
+	query = projectTraversal(query, queryMap)
+	result, err := query.Next()
 	if err != nil {
 		return v, err
 	}
@@ -318,6 +334,26 @@ func (q *Query[T]) Update(propertyName string, value any) error {
 	}
 	errChan := query.Iterate()
 	return <-errChan
+}
+
+func (q *Query[T]) SubTraversal(structField string, value *gremlingo.GraphTraversal) *Query[T] {
+	var v T
+	rt := reflect.TypeOf(v)
+	field, ok := rt.FieldByName(structField)
+	if !ok {
+		q.db.logger.Errorf("struct field: %s not found in struct", structField)
+		return q
+	}
+	gremlinTag := field.Tag.Get("gremlin")
+	if gremlinTag == "" || gremlinTag == "-" {
+		q.db.logger.Errorf(
+			"struct field: %s does not have a gremlin tag or is not exported",
+			structField,
+		)
+		return q
+	}
+	q.subTraversals[gremlinTag] = value
+	return q
 }
 
 // writeDebugString writes a string to the debug string if GSM_DEBUG is set to true
@@ -411,7 +447,10 @@ func (q *Query[T]) addQueryConditions(query *gremlingo.GraphTraversal) {
 	}
 }
 
-func toMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.GraphTraversal {
+// ValueMapTraversal is a helper function to create a value map traversal
+// if a property has a single value, it will be returned as a single value
+// if a property has multiple values, it will be returned as a slice of values
+func ValueMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.GraphTraversal {
 	return query.ValueMap(args...).By(
 		anonymousTraversal.Choose(
 			anonymousTraversal.Count(Scope.Local).Is(P.Eq(1)),
@@ -419,4 +458,117 @@ func toMapTraversal(query *gremlingo.GraphTraversal, args ...any) *gremlingo.Gra
 			anonymousTraversal.Identity(),
 		),
 	)
+}
+
+func structToQueryMap(v gsmtypes.VertexType) map[string]*gremlingo.GraphTraversal {
+	queryMap := make(map[string]*gremlingo.GraphTraversal)
+	rt := reflect.TypeOf(v)
+
+	// Handle pointer types
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+
+	for i := range rt.NumField() {
+		field := rt.Field(i)
+
+		// Handle embedded (anonymous) structs
+		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+			// Create a zero value of the embedded struct type to process it
+			embeddedValue := reflect.New(field.Type).Interface()
+			// Check if it implements VertexType, if so use it, otherwise process as struct type
+			if embeddedVertexType, ok := embeddedValue.(gsmtypes.VertexType); ok {
+				// Recursively process the embedded struct
+				embeddedMap := structToQueryMap(embeddedVertexType)
+				// Merge the embedded map into the parent map
+				maps.Copy(queryMap, embeddedMap)
+			} else {
+				// If it doesn't implement VertexType, process it directly using reflection
+				embeddedMap := processStructType(field.Type)
+				maps.Copy(queryMap, embeddedMap)
+			}
+			continue
+		}
+
+		gremlinTag := field.Tag.Get("gremlin")
+		if gremlinTag == "" || gremlinTag == "-" {
+			continue
+		}
+
+		var traversals []any
+		if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
+			traversals = append(traversals, gremlingo.T__.Values(gremlinTag).Fold())
+		} else {
+			traversals = append(traversals, gremlingo.T__.Values(gremlinTag))
+		}
+		traversals = append(traversals, gremlingo.T__.Constant(nil))
+		queryMap[gremlinTag] = gremlingo.T__.Coalesce(traversals...)
+	}
+	return queryMap
+}
+
+// processStructType processes a struct type directly without requiring VertexType interface
+func processStructType(rt reflect.Type) map[string]*gremlingo.GraphTraversal {
+	queryMap := make(map[string]*gremlingo.GraphTraversal)
+
+	// Handle pointer types
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+
+	if rt.Kind() != reflect.Struct {
+		return queryMap
+	}
+
+	for i := range rt.NumField() {
+		field := rt.Field(i)
+
+		// Handle embedded (anonymous) structs recursively
+		if field.Anonymous && field.Type.Kind() == reflect.Struct {
+			embeddedMap := processStructType(field.Type)
+			for k, v := range embeddedMap {
+				queryMap[k] = v
+			}
+			continue
+		}
+
+		gremlinTag := field.Tag.Get("gremlin")
+		if gremlinTag == "" || gremlinTag == "-" {
+			continue
+		}
+
+		var traversals []any
+		if field.Type.Kind() == reflect.Array || field.Type.Kind() == reflect.Slice {
+			traversals = append(traversals, gremlingo.T__.Values(gremlinTag).Fold())
+		} else {
+			traversals = append(traversals, gremlingo.T__.Values(gremlinTag))
+		}
+		traversals = append(traversals, gremlingo.T__.Constant(nil))
+		queryMap[gremlinTag] = gremlingo.T__.Coalesce(traversals...)
+	}
+	return queryMap
+}
+
+// projectTraversal projects the query map into the query
+func projectTraversal(
+	query *gremlingo.GraphTraversal,
+	queryMap map[string]*gremlingo.GraphTraversal,
+) *gremlingo.GraphTraversal {
+	keys := make([]any, 0, len(queryMap))
+	for k := range queryMap {
+		keys = append(keys, k)
+	}
+	query = query.Project(keys...)
+	for _, k := range keys {
+		if k.(string) == "id" { //nolint:errcheck // we already know the key is a string
+			query = query.By(
+				gremlingo.T__.Id(),
+			)
+			continue
+		}
+		query = query.By(
+			queryMap[k.(string)], //nolint:errcheck // we already know the key is a string
+		)
+	}
+	return query
 }

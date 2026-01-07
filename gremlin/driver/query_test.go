@@ -31,6 +31,7 @@ func TestQuery(t *testing.T) {
 		{
 			Name: "first",
 			Sort: 1,
+			// ListTest: []string{"item1", "item2", "item3"},
 		},
 		{
 			Name: "second",

@@ -31,23 +31,44 @@ func createOrUpdate[T gsmtypes.VertexType](db *GremlinDriver, value *T) error {
 	delete(mapValue, "id")
 	mapValue[gsmtypes.LastModified] = now
 	var query *gremlingo.GraphTraversal
-	newMap := make(map[any]any, len(mapValue))
+
 	if id == nil {
 		mapValue[gsmtypes.CreatedAt] = now
+		query = db.g.AddV(label)
 		for k, v := range mapValue {
-			newMap[k] = v
+			if reflect.ValueOf(v).Kind() == reflect.Slice {
+				sliceValue := reflect.ValueOf(v)
+				if db.dbDriver == Neptune {
+					for i := range sliceValue.Len() {
+						query.Property(gremlingo.Cardinality.Set, k, sliceValue.Index(i))
+					}
+				} else {
+					for i := range sliceValue.Len() {
+						query.Property(gremlingo.Cardinality.List, k, sliceValue.Index(i))
+					}
+				}
+			} else {
+				query.Property(gremlingo.Cardinality.Single, k, v)
+			}
 		}
-		newMap[gremlingo.T.Label] = label
-		query = db.g.MergeV(newMap)
+		result, err := query.Next()
+		if err != nil {
+			return err
+		}
+		resultElement, err := result.GetElement()
+		if err != nil {
+			return err
+		}
+		reflect.ValueOf(value).Elem().FieldByName("ID").Set(reflect.ValueOf(resultElement.Id))
 	} else {
 		query = db.g.MergeV(map[any]any{gremlingo.T.Id: id})
+		query.Option(gremlingo.Merge.OnMatch, mapValue)
+		id, err := query.Id().Next()
+		if err != nil {
+			return err
+		}
+		reflect.ValueOf(value).Elem().FieldByName("ID").Set(reflect.ValueOf(id.GetInterface()))
 	}
-	query.Option(gremlingo.Merge.OnMatch, mapValue)
-	vertexID, err := query.Id().Next()
-	if err != nil {
-		return err
-	}
-	reflect.ValueOf(value).Elem().FieldByName("ID").Set(reflect.ValueOf(vertexID.GetInterface()))
 	reflectNow := reflect.ValueOf(now)
 	reflect.ValueOf(value).Elem().FieldByName("LastModified").Set(reflectNow)
 	reflect.ValueOf(value).Elem().FieldByName("CreatedAt").Set(reflectNow)
