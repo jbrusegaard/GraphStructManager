@@ -296,4 +296,27 @@ func TestQuery(t *testing.T) {
 			}
 		},
 	)
+	t.Run(
+		"TestQueryAddSubTraversals", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			model := Model[testVertexForUtils](db).AddSubTraversals(map[string]*gremlingo.GraphTraversal{
+				"subTraversalTest":  gremlingo.T__.Constant("test123"),
+				"subTraversalTest2": gremlingo.T__.Constant(123),
+			})
+			result, err := model.Take()
+			if err != nil {
+				t.Error(err)
+			}
+			if result.SubTraversalTest != "test123" {
+				t.Errorf("Expected %s result, got %s", "test123", result.SubTraversalTest)
+			}
+			if result.SubTraversalTest2 != 123 {
+				t.Errorf("Expected %d result, got %d", 123, result.SubTraversalTest2)
+			}
+		},
+	)
 }

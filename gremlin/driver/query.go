@@ -111,6 +111,7 @@ func NewQuery[T gsmtypes.VertexType](db *GremlinDriver) *Query[T] {
 
 // AddSubTraversals adds multiple subtraversals to the query
 // This is useful when you need to fetch related data or perform complex traversals that should populate specific fields in your struct.
+// You will need to signal this in your struct tags with the gremlinSubTraversal tag.
 func (q *Query[T]) AddSubTraversals(subTraversals map[string]*gremlingo.GraphTraversal) *Query[T] {
 	maps.Copy(q.subTraversals, subTraversals)
 	return q
@@ -118,6 +119,7 @@ func (q *Query[T]) AddSubTraversals(subTraversals map[string]*gremlingo.GraphTra
 
 // AddSubTraversal adds a single subtraversal to the query
 // This is useful when you need to fetch related data or perform complex traversals that should populate a specific field in your struct.
+// You will need to signal this in your struct tags with the gremlinSubTraversal tag.
 func (q *Query[T]) AddSubTraversal(
 	gremlinTag string,
 	traversal *gremlingo.GraphTraversal,

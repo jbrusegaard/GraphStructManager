@@ -239,8 +239,8 @@ type User struct {
     types.Vertex
     Name        string   `gremlin:"name"`
     Email       string   `gremlin:"email"`
-    FriendCount int      `gremlin:"friend_count"`  // Will be populated by subtraversal
-    Friends     []string `gremlin:"friends"`        // Another subtraversal field
+    FriendCount int      `gremlinSubTraversal:"friend_count"`  // Will be populated by subtraversal
+    Friends     []string `gremlinSubTraversal:"friends"`        // Another subtraversal field
 }
 
 // Get user with friend count using a subtraversal
@@ -266,7 +266,7 @@ user, err := GSM.Model[User](db).
 type UserWithStats struct {
     types.Vertex
     Name           string  `gremlin:"name"`
-    AvgFriendAge   float64 `gremlin:"avg_friend_age"`  // Populated by subtraversal
+    AvgFriendAge   float64 `gremlinSubTraversal:"avg_friend_age"`  // Populated by subtraversal
 }
 
 user, err := GSM.Model[UserWithStats](db).
@@ -279,7 +279,7 @@ user, err := GSM.Model[UserWithStats](db).
 ```
 
 **Important notes:**
-- The gremlin tag in `AddSubTraversal` must exactly match the `gremlin` tag on the struct field
+- The gremlin tag in `AddSubTraversal` must exactly match the `gremlinSubTraversal` tag on the struct field
 - Subtraversals are executed as part of the main query using Gremlin's `Project` step
 - The result type from the subtraversal must be compatible with the struct field type
 - You can add multiple subtraversals to populate different fields in a single query
