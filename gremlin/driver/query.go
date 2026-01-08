@@ -207,7 +207,7 @@ func (q *Query[T]) OrderBy(field string, order GremlinOrder) *Query[T] {
 func (q *Query[T]) Find() ([]T, error) {
 	q.writeDebugString(".ToList()")
 	query := q.BuildQuery()
-	queryResults, err := toMapTraversal(query, q.subTraversals, true).ToList()
+	queryResults, err := ToMapTraversal(query, q.subTraversals, true).ToList()
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (q *Query[T]) Take() (T, error) {
 	q.writeDebugString(".Next()")
 	var v T
 	query := q.BuildQuery()
-	result, err := toMapTraversal(query, q.subTraversals, true).Next()
+	result, err := ToMapTraversal(query, q.subTraversals, true).Next()
 	if err != nil {
 		return v, err
 	}
@@ -270,7 +270,7 @@ func (q *Query[T]) ID(id any) (T, error) {
 		return v, err
 	}
 	query = query.HasLabel(label)
-	result, err := toMapTraversal(query, q.subTraversals, true).Next()
+	result, err := ToMapTraversal(query, q.subTraversals, true).Next()
 	if err != nil {
 		return v, err
 	}
@@ -421,7 +421,16 @@ func (q *Query[T]) addQueryConditions(query *gremlingo.GraphTraversal) {
 	}
 }
 
-func toMapTraversal(
+// ToMapTraversal converts a Gremlin traversal to a map traversal using valuemap and projecting the subtraversals
+// if there are no subtraversals, it will return the query.ValueMap(args...).By(
+//
+//		anonymousTraversal.Choose(
+//			anonymousTraversal.Count(Scope.Local).Is(P.Eq(1)),
+//			anonymousTraversal.Unfold(),
+//			anonymousTraversal.Identity(),
+//		),
+//	)
+func ToMapTraversal(
 	query *gremlingo.GraphTraversal,
 	subtraversals map[string]*gremlingo.GraphTraversal,
 	args ...any,
@@ -439,14 +448,14 @@ func toMapTraversal(
 	for key := range subtraversals {
 		subtraversalsKeys = append(subtraversalsKeys, key)
 	}
-	projectQuery := gremlingo.T__.Project(subtraversalsKeys...)
+	projectQuery := anonymousTraversal.Project(subtraversalsKeys...)
 	for _, key := range subtraversalsKeys {
 		keyString := key.(string) //nolint:errcheck //we already know this is a string
 		projectQuery = projectQuery.By(subtraversals[keyString])
 	}
 	query = query.Local(
-		gremlingo.T__.Union(
-			gremlingo.T__.ValueMap(args...).By(
+		anonymousTraversal.Union(
+			anonymousTraversal.ValueMap(args...).By(
 				anonymousTraversal.Choose(
 					anonymousTraversal.Count(Scope.Local).Is(P.Eq(1)),
 					anonymousTraversal.Unfold(),
@@ -454,7 +463,7 @@ func toMapTraversal(
 				),
 			),
 			projectQuery,
-		).Unfold().Group().By(gremlingo.Column.Keys).By(gremlingo.T__.Select(gremlingo.Column.Values)),
+		).Unfold().Group().By(gremlingo.Column.Keys).By(anonymousTraversal.Select(gremlingo.Column.Values)),
 	)
 	return query
 }

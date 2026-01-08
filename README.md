@@ -12,6 +12,7 @@ A type-safe, chainable query builder for Gremlin graph databases in Go. This ORM
   - [NewQuery](#newquery)
   - [Where](#where)
   - [WhereTraversal](#wheretraversal)
+  - [AddSubTraversal](#addsubtraversal)
   - [Dedup](#dedup)
   - [Limit](#limit)
   - [Offset](#offset)
@@ -215,6 +216,74 @@ users := GSM.Model[TestVertex](db).
     Where("name", comparator.EQ, "John").
     WhereTraversal(gremlingo.T__.Has("email", gremlingo.P.StartingWith("j")))
 ```
+
+### AddSubTraversal
+
+Allows you to pass sub traversals that will be executed and mapped to struct fields based on their gremlin tags. This is useful when you need to fetch related data or perform complex traversals that should populate specific fields in your struct.
+
+**Signature:**
+```go
+func (q *Query[T]) AddSubTraversal(gremlinTag string, traversal *gremlingo.GraphTraversal) *Query[T]
+```
+
+**How it works:**
+- The `gremlinTag` parameter must match a `gremlin` tag on a field in your struct
+- The `traversal` is executed as part of the query and its result is projected
+- The result from the subtraversal is automatically mapped to the struct field with the matching gremlin tag
+
+**Examples:**
+
+```go
+// Define a struct with a field that will be populated by a subtraversal
+type User struct {
+    types.Vertex
+    Name        string   `gremlin:"name"`
+    Email       string   `gremlin:"email"`
+    FriendCount int      `gremlin:"friend_count"`  // Will be populated by subtraversal
+    Friends     []string `gremlin:"friends"`        // Another subtraversal field
+}
+
+// Get user with friend count using a subtraversal
+user, err := GSM.Model[User](db).
+    Where("email", comparator.EQ, "john@example.com").
+    AddSubTraversal("friend_count", gremlingo.T__.Out("friends").Count()).
+    First()
+
+// Get user with list of friend names
+user, err := GSM.Model[User](db).
+    Where("email", comparator.EQ, "john@example.com").
+    AddSubTraversal("friends", gremlingo.T__.Out("friends").Values("name").Fold()).
+    First()
+
+// Multiple subtraversals for different fields
+user, err := GSM.Model[User](db).
+    Where("email", comparator.EQ, "john@example.com").
+    AddSubTraversal("friend_count", gremlingo.T__.Out("friends").Count()).
+    AddSubTraversal("friends", gremlingo.T__.Out("friends").Values("name").Fold()).
+    First()
+
+// Complex subtraversal - get average age of friends
+type UserWithStats struct {
+    types.Vertex
+    Name           string  `gremlin:"name"`
+    AvgFriendAge   float64 `gremlin:"avg_friend_age"`  // Populated by subtraversal
+}
+
+user, err := GSM.Model[UserWithStats](db).
+    Where("name", comparator.EQ, "John").
+    AddSubTraversal("avg_friend_age",
+        gremlingo.T__.Out("friends").
+            Values("age").
+            Mean()).
+    First()
+```
+
+**Important notes:**
+- The gremlin tag in `AddSubTraversal` must exactly match the `gremlin` tag on the struct field
+- Subtraversals are executed as part of the main query using Gremlin's `Project` step
+- The result type from the subtraversal must be compatible with the struct field type
+- You can add multiple subtraversals to populate different fields in a single query
+- Subtraversals work with `Find()`, `First()`, and other query execution methods
 
 ### Dedup
 
