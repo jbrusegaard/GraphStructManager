@@ -29,12 +29,14 @@ func TestQuery(t *testing.T) {
 	}
 	seededData := []testVertexForUtils{
 		{
-			Name: "first",
-			Sort: 1,
+			Name:     "first",
+			Sort:     1,
+			ListTest: []string{"test123"},
 		},
 		{
-			Name: "second",
-			Sort: 2,
+			Name:     "second",
+			Sort:     2,
+			ListTest: []string{"test123", "test"},
 		},
 		{
 			Name: "third",
@@ -291,6 +293,29 @@ func TestQuery(t *testing.T) {
 				if mdl.Name != model.Name {
 					t.Errorf("Expected %s result, got %s", model.Name, mdl.Name)
 				}
+			}
+		},
+	)
+	t.Run(
+		"TestQueryAddSubTraversals", func(t *testing.T) {
+			t.Cleanup(cleanDB)
+			err = seedData(db, seededData)
+			if err != nil {
+				t.Error(err)
+			}
+			model := Model[testVertexForUtils](db).AddSubTraversals(map[string]*gremlingo.GraphTraversal{
+				"subTraversalTest":  gremlingo.T__.Constant("test123"),
+				"subTraversalTest2": gremlingo.T__.Constant(123),
+			})
+			result, err := model.Take()
+			if err != nil {
+				t.Error(err)
+			}
+			if result.SubTraversalTest != "test123" {
+				t.Errorf("Expected %s result, got %s", "test123", result.SubTraversalTest)
+			}
+			if result.SubTraversalTest2 != 123 {
+				t.Errorf("Expected %d result, got %d", 123, result.SubTraversalTest2)
 			}
 		},
 	)

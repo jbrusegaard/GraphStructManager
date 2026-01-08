@@ -10,11 +10,13 @@ import (
 
 type testVertexForUtils struct {
 	gsmtypes.Vertex
-	Name     string   `json:"name"     gremlin:"name"`
-	Ignore   string   `json:"-"        gremlin:"-"`
-	ListTest []string `json:"listTest" gremlin:"listTest"`
-	Unmapped int      `json:"unmapped" gremlin:"unmapped"`
-	Sort     int      `json:"sort"     gremlin:"sort"`
+	Name              string   `json:"name"     gremlin:"name"`
+	Ignore            string   `json:"-"        gremlin:"-"`
+	ListTest          []string `json:"listTest" gremlin:"listTest"`
+	Unmapped          int      `json:"unmapped" gremlin:"unmapped"`
+	Sort              int      `json:"sort"     gremlin:"sort"`
+	SubTraversalTest  string   `json:"testConstant" gremlinSubTraversal:"subTraversalTest"`
+	SubTraversalTest2 int      `json:"testConstant2" gremlinSubTraversal:"subTraversalTest2"`
 }
 
 type testVertexWithNumSlice struct {

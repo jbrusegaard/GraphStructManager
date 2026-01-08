@@ -41,7 +41,10 @@ func getStructName[T any]() (string, error) {
 // v any must be a pointer to a struct
 // result *gremlingo.Result is the gremlin result to unload which must be a map
 // note the struct must have gremlin tags on the fields to be unloaded
-func UnloadGremlinResultIntoStruct(v any, result *gremlingo.Result) error {
+func UnloadGremlinResultIntoStruct(
+	v any,
+	result *gremlingo.Result,
+) error {
 	mapResult, ok := result.GetInterface().(map[any]any)
 	if !ok {
 		return errors.New("result is not a map")
@@ -76,12 +79,19 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 			recursivelyUnloadIntoStruct(field.Addr().Interface(), stringMap)
 		}
 
-		gremlinTag := rt.Field(i).Tag.Get("gremlin")
-		if gremlinTag == "" || gremlinTag == "-" || !field.CanInterface() || !field.CanSet() {
+		gremlinTag := rt.Field(i).Tag.Get(gsmtypes.GremlinTag)
+		gremlinSubTraversalTag := rt.Field(i).Tag.Get(gsmtypes.GremlinSubTraversalTag)
+		if !field.CanInterface() || !field.CanSet() || ((gremlinTag == "" || gremlinTag == "-") &&
+			(gremlinSubTraversalTag == "" || gremlinSubTraversalTag == "-")) {
 			continue
 		}
-		if _, ok := stringMap[gremlinTag]; !ok {
+		_, gremlinTagOk := stringMap[gremlinTag]
+		_, subtraversalTagOk := stringMap[gremlinSubTraversalTag]
+		if !gremlinTagOk && !subtraversalTagOk {
 			continue
+		}
+		if subtraversalTagOk {
+			gremlinTag = gremlinSubTraversalTag
 		}
 		gType := reflect.TypeOf(stringMap[gremlinTag])
 
@@ -179,8 +189,13 @@ func structToMap(value any) (string, map[string]any, error) {
 			continue
 		}
 
+		// Skip sub traversal tags so this doesnt get included when creating vertices
+		if field.Tag.Get(gsmtypes.GremlinSubTraversalTag) != "" {
+			continue
+		}
+
 		// Get the gremlin tag
-		gremlinTag := field.Tag.Get("gremlin")
+		gremlinTag := field.Tag.Get(gsmtypes.GremlinTag)
 
 		// Skip if no gremlin tag or if field is not exported
 		if gremlinTag == "" || gremlinTag == "-" || !fieldValue.CanInterface() {
@@ -235,7 +250,7 @@ func getStructFieldNameAndType[T any](tag string) (string, reflect.Type, error) 
 	rt := reflect.TypeOf(s)
 	for i := range rt.NumField() {
 		field := rt.Field(i)
-		if field.Tag.Get("gremlin") == tag {
+		if field.Tag.Get(gsmtypes.GremlinTag) == tag {
 			return field.Name, field.Type, nil
 		}
 	}
