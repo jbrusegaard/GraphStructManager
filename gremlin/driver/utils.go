@@ -95,9 +95,10 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 		}
 		gType := reflect.TypeOf(stringMap[gremlinTag])
 
-		if gType.ConvertibleTo(field.Type()) {
+		switch {
+		case gType.ConvertibleTo(field.Type()):
 			field.Set(reflect.ValueOf(stringMap[gremlinTag]).Convert(field.Type()))
-		} else if gType.Kind() == reflect.Slice {
+		case gType.Kind() == reflect.Slice:
 			strSlice := stringMap[gremlinTag].([]any) //nolint:errcheck // we already validated via reflect type check
 			slice := reflect.MakeSlice(
 				field.Type(), len(strSlice), len(strSlice),
@@ -105,6 +106,12 @@ func recursivelyUnloadIntoStruct(v any, stringMap map[string]any) {
 			for i, v := range strSlice {
 				slice.Index(i).Set(reflect.ValueOf(v).Convert(field.Type().Elem()))
 			}
+			field.Set(slice)
+		case field.Type().Kind() == reflect.Slice && gType.ConvertibleTo(field.Type().Elem()):
+			// Handle case where field is a slice but gremlin result is a single value
+			// Create a slice with one element
+			slice := reflect.MakeSlice(field.Type(), 1, 1)
+			slice.Index(0).Set(reflect.ValueOf(stringMap[gremlinTag]).Convert(field.Type().Elem()))
 			field.Set(slice)
 		}
 	}

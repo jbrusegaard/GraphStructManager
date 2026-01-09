@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"slices"
 	"testing"
 	"time"
 
@@ -308,4 +309,23 @@ func TestUtils(t *testing.T) {
 			},
 		)
 	}
+	t.Run(
+		"TestUnloadingIntoGremlinStructWithSingleItem", func(t *testing.T) {
+			t.Parallel()
+			var test testVertexForUtils
+			data := gremlingo.Result{
+				Data: map[any]any{
+					"id":       "2934234230234",
+					"listTest": "1",
+				},
+			}
+			err := UnloadGremlinResultIntoStruct(&test, &data)
+			if err != nil {
+				t.Errorf("Error unloading struct: %v", err)
+			}
+			if !slices.Contains(test.ListTest, "1") {
+				t.Errorf("ListTest not found in struct")
+			}
+		},
+	)
 }
