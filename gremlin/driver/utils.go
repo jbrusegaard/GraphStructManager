@@ -50,7 +50,7 @@ func UnloadGremlinResultIntoStruct(
 		return errors.New("result is not a map")
 	}
 	// make string map
-	stringMap := make(map[string]any)
+	stringMap := make(map[string]any, len(mapResult))
 	for key, value := range mapResult {
 		keyStr, keyOk := key.(string)
 		if !keyOk {
